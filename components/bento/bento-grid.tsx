@@ -7,6 +7,7 @@ import { HonorsCard } from './honors-card';
 import { TimelineCard } from './timeline-card';
 import { EducationCard } from './education-card';
 import { getHomeContent } from '@/lib/content';
+import { RevealGradientText } from '@/components/animated-text';
 
 export async function BentoGrid({ locale }: { locale: Locale }) {
   const t = await getTranslations({ locale, namespace: 'sections' });
@@ -97,7 +98,9 @@ function SectionHeader({
       id={id}
       className="mt-8 flex items-end justify-between gap-4 md:col-span-12 md:mt-10"
     >
-      <h2 className="display-headline text-3xl text-gradient sm:text-4xl md:text-5xl">{title}</h2>
+      <h2 className="display-headline text-3xl sm:text-4xl md:text-5xl">
+        <RevealGradientText text={title} />
+      </h2>
       {subtitle && (
         <p className="hidden text-sm text-muted-foreground sm:block">{subtitle}</p>
       )}

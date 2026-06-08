@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowUpRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { HoverSplitText } from '@/components/animated-text';
 import { GlassCard } from '@/components/glass-card';
 import { Badge } from '@/components/ui/badge';
 import { pickLocale, type Project } from '@/lib/profile';
@@ -35,8 +36,12 @@ export function ProjectCard({
               </Badge>
               <ArrowUpRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-foreground" />
             </div>
-            <h3 className="display-headline text-2xl sm:text-3xl">{pickLocale(project.title, locale)}</h3>
-            <p className="text-sm text-muted-foreground">{pickLocale(project.tagline, locale)}</p>
+            <h3 className="display-headline text-2xl sm:text-3xl">
+              <HoverSplitText>{pickLocale(project.title, locale)}</HoverSplitText>
+            </h3>
+            <p className="text-sm text-muted-foreground transition-colors duration-300 group-hover:text-foreground/75">
+              {pickLocale(project.tagline, locale)}
+            </p>
           </div>
 
           {project.highlights.length > 0 && (
