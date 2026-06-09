@@ -87,5 +87,36 @@
     "light": "Light",
     "dark": "Dark",
     "system": "System"
+  },
+  "cmdk": {
+    "label": "Command palette",
+    "trigger": "Search",
+    "placeholder": "Search projects, experiences, posts…",
+    "suggestions": "Suggestions",
+    "results": "Results",
+    "empty": "No matches. Try a different keyword, or ask the AI.",
+    "loading": "Searching…",
+    "goHome": "Go to home",
+    "goProjects": "Open projects",
+    "goBlog": "Open the blog",
+    "askAi": "Ask the AI",
+    "hintNavigate": "navigate",
+    "hintSelect": "select"
+  },
+  "contact": {
+    "title": "Say hi",
+    "subtitle": "Open to roles, collaborations, or just a casual hello.",
+    "name": "Name",
+    "email": "Email",
+    "topic": "What's on your mind?",
+    "message": "Message",
+    "send": "Send",
+    "sending": "Sending…",
+    "ok": "Got it — I'll reply soon :)",
+    "tooFast": "You just sent one — try again in a minute.",
+    "error": "Something broke. Try again or email directly."
+  },
+  "views": {
+    "label": "{count} views"
   }
 }

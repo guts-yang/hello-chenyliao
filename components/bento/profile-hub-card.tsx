@@ -48,7 +48,11 @@ export function ProfileHubCard({
   const displayName = locale === 'zh' ? profile.nameZh : profile.nameEn;
   const initials = profile.handle.slice(0, 2).toUpperCase();
 
-  const visibleSocials = profile.socials.filter((s) => isVisibleSocial(s.type));
+  const visibleSocials: Array<(typeof profile.socials)[number] & { type: VisibleSocialType }> =
+    profile.socials.filter(
+      (s): s is (typeof profile.socials)[number] & { type: VisibleSocialType } =>
+        isVisibleSocial(s.type),
+    );
 
   // Close on Escape and lock the background scroll while the modal is open so
   // users on small screens cannot accidentally scroll the page underneath the
@@ -171,7 +175,10 @@ export function ProfileHubCard({
                 {visibleSocials.map((s) => {
                   const Icon = iconFor[s.type];
                   const isWechat = s.type === 'wechat';
-                  const label = t(`social.${s.type}` as 'social.github' | 'social.wechat');
+                  const label =
+                    s.type === 'github' || s.type === 'wechat'
+                      ? t(`social.${s.type}` as 'social.github' | 'social.wechat')
+                      : (s.label ?? s.type);
 
                   if (isWechat) {
                     return (

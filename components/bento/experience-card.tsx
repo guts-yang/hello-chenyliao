@@ -1,9 +1,9 @@
 'use client';
 
-import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowUpRight, Briefcase } from 'lucide-react';
 import { GlassCard } from '@/components/glass-card';
+import { TransitionLink } from '@/components/transition-link';
 import { pickLocale, type Experience } from '@/lib/profile';
 import type { Locale } from '@/i18n';
 import { cn, formatDate } from '@/lib/utils';
@@ -18,9 +18,10 @@ export function ExperienceCard({
   className?: string;
 }) {
   return (
-    <Link
+    <TransitionLink
       href={`/${locale}/experience/${experience.slug}`}
       className={cn('group block h-full', className)}
+      data-cursor="grow"
     >
       <GlassCard interactive className="h-full">
         <motion.div layoutId={`experience-${experience.slug}`} className="flex h-full flex-col gap-4">
@@ -33,7 +34,12 @@ export function ExperienceCard({
             <ArrowUpRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-foreground" />
           </div>
           <div>
-            <h3 className="display-headline text-2xl">{pickLocale(experience.org, locale)}</h3>
+            <h3
+              className="display-headline text-2xl"
+              style={{ viewTransitionName: `experience-title-${experience.slug}` }}
+            >
+              {pickLocale(experience.org, locale)}
+            </h3>
             <p className="text-sm text-muted-foreground">{pickLocale(experience.role, locale)}</p>
           </div>
           <p className="text-sm text-foreground/85">{pickLocale(experience.summary, locale)}</p>
@@ -49,6 +55,6 @@ export function ExperienceCard({
           </ul>
         </motion.div>
       </GlassCard>
-    </Link>
+    </TransitionLink>
   );
 }

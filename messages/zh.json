@@ -87,5 +87,36 @@
     "light": "浅色",
     "dark": "深色",
     "system": "跟随系统"
+  },
+  "cmdk": {
+    "label": "命令面板",
+    "trigger": "搜索",
+    "placeholder": "搜索项目、经历、文章…",
+    "suggestions": "推荐",
+    "results": "搜索结果",
+    "empty": "没有命中。试试别的关键词，或者直接问 AI。",
+    "loading": "搜索中…",
+    "goHome": "回到首页",
+    "goProjects": "查看项目",
+    "goBlog": "打开博客",
+    "askAi": "用这个问题问 AI",
+    "hintNavigate": "切换",
+    "hintSelect": "选中"
+  },
+  "contact": {
+    "title": "聊聊？",
+    "subtitle": "工作机会、合作或单纯打个招呼都欢迎。",
+    "name": "称呼",
+    "email": "邮箱",
+    "topic": "想聊什么？",
+    "message": "正文",
+    "send": "发送",
+    "sending": "发送中…",
+    "ok": "已收到，我会尽快回复 :)",
+    "tooFast": "刚刚发过一条，稍等一分钟再试。",
+    "error": "出错了，请稍后重试或直接发邮件。"
+  },
+  "views": {
+    "label": "{count} 次浏览"
   }
 }

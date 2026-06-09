@@ -1,10 +1,20 @@
 'use client';
 
-import * as React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, FolderGit2, Briefcase, Award, User, LogOut, ExternalLink, Settings, ScrollText } from 'lucide-react';
+import {
+  LayoutDashboard,
+  FolderGit2,
+  Briefcase,
+  Award,
+  User,
+  LogOut,
+  ExternalLink,
+  Settings,
+  ScrollText,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 
 const groups = [
@@ -30,17 +40,12 @@ const groups = [
 export function AdminSidebar({ email }: { email: string }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [loggingOut, setLoggingOut] = React.useState(false);
 
   async function signOut() {
-    setLoggingOut(true);
-    try {
-      await fetch('/api/admin/logout', { method: 'POST' });
-      router.replace('/admin/login');
-      router.refresh();
-    } finally {
-      setLoggingOut(false);
-    }
+    const supabase = createSupabaseBrowserClient();
+    await supabase.auth.signOut();
+    router.replace('/admin/login');
+    router.refresh();
   }
 
   return (
@@ -52,10 +57,10 @@ export function AdminSidebar({ email }: { email: string }) {
           {email}
         </p>
       </div>
-      <nav className="flex flex-col gap-4">
+      <nav className="flex flex-col gap-1">
         {groups.map((group) => (
-          <div key={group.title} className="space-y-1">
-            <p className="px-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+          <div key={group.title} className="flex flex-col gap-1">
+            <p className="px-3 pt-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
               {group.title}
             </p>
             {group.items.map((item) => {
@@ -93,11 +98,10 @@ export function AdminSidebar({ email }: { email: string }) {
         <button
           type="button"
           onClick={signOut}
-          disabled={loggingOut}
-          className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs text-muted-foreground hover:bg-white/40 hover:text-foreground disabled:opacity-50 dark:hover:bg-white/10"
+          className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs text-muted-foreground hover:bg-white/40 hover:text-foreground dark:hover:bg-white/10"
         >
           <LogOut className="h-3.5 w-3.5" />
-          {loggingOut ? '退出中…' : '退出登录'}
+          退出登录
         </button>
       </div>
     </aside>

@@ -6,82 +6,101 @@ import { Button } from '@/components/ui/button';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import type { Locale } from '@/i18n';
+import { ToolCard, type ToolPayload } from './tool-cards';
 
-export type ChatMessage = { role: 'user' | 'assistant'; content: string };
+type ChatPart =
+  | { kind: 'text'; value: string }
+  | { kind: 'tool'; payload: ToolPayload };
+
+type ChatMessage = {
+  role: 'user' | 'assistant';
+  content: string;
+  parts?: ChatPart[];
+};
+
+type ServerEvent =
+  | { t: 'd'; v: string }
+  | { t: 'tool'; name: string; data: ToolPayload }
+  | { t: 'err'; message: string };
 
 /**
- * Pure chat surface. Layout is owned by the parent (popover, bottom sheet,
- * full page) — pass `className` for sizing and `variant="bare"` to drop the
- * outer glass card so the parent panel provides the chrome.
+ * Pure chat surface. Speaks the NDJSON protocol exposed by /api/chat:
+ *   - {"t":"d","v":"..."}   accumulated into the assistant message text
+ *   - {"t":"tool", ...}     rendered as a rich card inline
+ *   - {"t":"err", ...}      replaces the draft with a friendly error
  *
- * Session model: when the parent passes a `sessionId`, the room scopes its
- * conversation to that session. Switching to a new id resets the visible
- * transcript to `initialMessages` (typically replayed from the API). The
- * parent learns about new sessions via `onSessionResolved`, which fires after
- * the streaming response surfaces the X-Chat-Session-Id header — this lets
- * the sidebar refresh and select the just-created session without the chat
- * room knowing how the sidebar is rendered.
+ * Set `defaultPrompt` to pre-fill the input (e.g. when the command palette
+ * forwards a query into the chat).
  */
 export function ChatRoom({
   locale,
   className,
   variant = 'card',
-  sessionId = null,
-  initialMessages,
-  onSessionResolved,
+  defaultPrompt = '',
 }: {
   locale: Locale;
   className?: string;
   variant?: 'card' | 'bare';
-  sessionId?: string | null;
-  initialMessages?: ChatMessage[];
-  onSessionResolved?: (sessionId: string) => void;
+  defaultPrompt?: string;
 }) {
   const t = useTranslations('sections.ai');
-  const [input, setInput] = React.useState('');
-  const [messages, setMessages] = React.useState<ChatMessage[]>(initialMessages ?? []);
-  const [draft, setDraft] = React.useState('');
+  const [input, setInput] = React.useState(defaultPrompt);
+  const [messages, setMessages] = React.useState<ChatMessage[]>([]);
+  const [draftText, setDraftText] = React.useState('');
+  const [draftParts, setDraftParts] = React.useState<ChatPart[]>([]);
   const [pending, setPending] = React.useState(false);
   const scrollRef = React.useRef<HTMLDivElement>(null);
-  const draftRef = React.useRef('');
+  const inputRef = React.useRef<HTMLInputElement>(null);
   const flushTimerRef = React.useRef<number | null>(null);
+  const draftTextRef = React.useRef('');
+  const draftPartsRef = React.useRef<ChatPart[]>([]);
   const nextMessagesRef = React.useRef<ChatMessage[]>([]);
 
-  // Reset visible transcript whenever the parent switches the active session
-  // (including the "new chat" → sessionId=null reset).
   React.useEffect(() => {
-    setMessages(initialMessages ?? []);
-    setDraft('');
-    draftRef.current = '';
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionId]);
+    if (defaultPrompt) {
+      setInput(defaultPrompt);
+      inputRef.current?.focus();
+    }
+  }, [defaultPrompt]);
 
   React.useEffect(() => {
     scrollRef.current?.scrollTo({
       top: scrollRef.current.scrollHeight,
       behavior: pending ? 'auto' : 'smooth',
     });
-  }, [messages.length, draft, pending]);
+  }, [messages.length, draftText, draftParts.length, pending]);
 
   React.useEffect(() => {
     return () => {
-      if (flushTimerRef.current) {
-        window.clearTimeout(flushTimerRef.current);
-      }
+      if (flushTimerRef.current) window.clearTimeout(flushTimerRef.current);
     };
   }, []);
 
-  async function send(e?: React.FormEvent) {
-    e?.preventDefault();
-    const trimmed = input.trim();
-    if (!trimmed || pending) return;
+  function scheduleFlush() {
+    if (flushTimerRef.current != null) return;
+    flushTimerRef.current = window.setTimeout(() => {
+      flushTimerRef.current = null;
+      setDraftText(draftTextRef.current);
+      setDraftParts([...draftPartsRef.current]);
+    }, 60);
+  }
 
-    const next = [...messages, { role: 'user' as const, content: trimmed }];
+  async function send(e?: React.FormEvent, override?: string) {
+    e?.preventDefault();
+    const text = (override ?? input).trim();
+    if (!text || pending) return;
+
+    const next: ChatMessage[] = [
+      ...messages,
+      { role: 'user', content: text },
+    ];
     setMessages(next);
     nextMessagesRef.current = next;
     setInput('');
-    setDraft('');
-    draftRef.current = '';
+    draftTextRef.current = '';
+    draftPartsRef.current = [];
+    setDraftText('');
+    setDraftParts([]);
     setPending(true);
 
     try {
@@ -89,36 +108,43 @@ export function ChatRoom({
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          messages: next,
+          messages: next.map((m) => ({ role: m.role, content: m.content })),
           locale,
-          ...(sessionId ? { sessionId } : {}),
         }),
       });
-
-      if (!res.ok || !res.body) {
-        throw new Error(`Chat request failed (${res.status})`);
-      }
-
-      // Surface the session id to the parent before draining the stream so
-      // the sidebar can already insert the new row optimistically.
-      const resolved = res.headers.get('X-Chat-Session-Id');
-      if (resolved && resolved !== sessionId) {
-        onSessionResolved?.(resolved);
-      }
+      if (!res.ok || !res.body) throw new Error(`chat ${res.status}`);
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
-      setDraft('');
+      let buffered = '';
 
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
-        draftRef.current += decoder.decode(value, { stream: true });
-        if (flushTimerRef.current == null) {
-          flushTimerRef.current = window.setTimeout(() => {
-            flushTimerRef.current = null;
-            setDraft(draftRef.current);
-          }, 60);
+        buffered += decoder.decode(value, { stream: true });
+        let nl;
+        while ((nl = buffered.indexOf('\n')) >= 0) {
+          const line = buffered.slice(0, nl).trim();
+          buffered = buffered.slice(nl + 1);
+          if (!line) continue;
+          let event: ServerEvent;
+          try {
+            event = JSON.parse(line) as ServerEvent;
+          } catch {
+            continue;
+          }
+          if (event.t === 'd') {
+            draftTextRef.current += event.v;
+            scheduleFlush();
+          } else if (event.t === 'tool') {
+            draftPartsRef.current = [
+              ...draftPartsRef.current,
+              { kind: 'tool', payload: event.data },
+            ];
+            scheduleFlush();
+          } else if (event.t === 'err') {
+            throw new Error(event.message);
+          }
         }
       }
 
@@ -126,10 +152,19 @@ export function ChatRoom({
         window.clearTimeout(flushTimerRef.current);
         flushTimerRef.current = null;
       }
-      const assistant = draftRef.current;
-      setDraft('');
-      setMessages([...nextMessagesRef.current, { role: 'assistant', content: assistant }]);
-    } catch {
+      const finalText = draftTextRef.current;
+      const finalParts: ChatPart[] = [];
+      if (finalText) finalParts.push({ kind: 'text', value: finalText });
+      finalParts.push(...draftPartsRef.current);
+
+      setDraftText('');
+      setDraftParts([]);
+      setMessages([
+        ...nextMessagesRef.current,
+        { role: 'assistant', content: finalText, parts: finalParts },
+      ]);
+    } catch (err) {
+      console.warn('[chat]', err);
       setMessages([
         ...next,
         {
@@ -141,7 +176,8 @@ export function ChatRoom({
         },
       ]);
     } finally {
-      draftRef.current = '';
+      draftTextRef.current = '';
+      draftPartsRef.current = [];
       setPending(false);
     }
   }
@@ -150,6 +186,13 @@ export function ChatRoom({
     variant === 'card'
       ? cn('glass relative flex flex-col rounded-3xl p-6 sm:p-7', className)
       : cn('flex h-full w-full flex-col', className);
+
+  const liveParts: ChatPart[] = React.useMemo(() => {
+    const out: ChatPart[] = [];
+    if (draftText) out.push({ kind: 'text', value: draftText });
+    out.push(...draftParts);
+    return out;
+  }, [draftText, draftParts]);
 
   return (
     <div className={wrapperClass}>
@@ -165,56 +208,120 @@ export function ChatRoom({
         </div>
       )}
 
-      <div
-        ref={scrollRef}
-        className="scrollbar-none flex-1 space-y-3 overflow-y-auto px-1 py-3"
-      >
+      <div ref={scrollRef} className="scrollbar-none flex-1 space-y-3 overflow-y-auto px-1 py-3">
         {messages.length === 0 && !pending && (
-          <div className="grid h-full place-items-center px-4 text-center text-sm text-muted-foreground">
-            {t('placeholder')}
-          </div>
+          <Suggestions
+            locale={locale}
+            onPick={(q) => {
+              setInput(q);
+              void send(undefined, q);
+            }}
+          />
         )}
-        {[...messages, ...(pending && draft ? [{ role: 'assistant', content: draft } as ChatMessage] : [])].map((m, i) => (
-          <div
-            key={i}
-            className={cn('flex', m.role === 'user' ? 'justify-end' : 'justify-start')}
-          >
-            <div
-              className={cn(
-                'max-w-[88%] whitespace-pre-wrap rounded-2xl px-4 py-2 text-sm leading-relaxed',
-                m.role === 'user'
-                  ? 'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]'
-                  : 'border border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-white/5',
-              )}
-            >
-              {m.content || (pending && i === messages.length - 1 ? t('thinking') : '')}
-            </div>
-          </div>
+        {messages.map((m, i) => (
+          <Bubble key={i} role={m.role} parts={m.parts ?? [{ kind: 'text', value: m.content }]} />
         ))}
-        {pending && !draft && messages.length > 0 && (
-          <div className="flex justify-start">
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-muted-foreground dark:border-white/10 dark:bg-white/5">
-              {t('thinking')}
-            </div>
-          </div>
+        {pending && (
+          <Bubble
+            role="assistant"
+            parts={liveParts.length > 0 ? liveParts : [{ kind: 'text', value: t('thinking') }]}
+            pending
+          />
         )}
       </div>
 
       <form
-        onSubmit={send}
-        className="flex items-center gap-2 border-t border-slate-200 pt-3 dark:border-white/10"
+        onSubmit={(e) => send(e)}
+        className="flex items-center gap-2 border-t border-white/30 dark:border-white/10 pt-3"
       >
         <input
+          ref={inputRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder={t('placeholder')}
-          className="h-11 flex-1 rounded-full border border-slate-200 bg-white px-4 text-sm outline-none ring-0 transition-colors focus:border-[hsl(var(--primary)/0.5)] dark:border-white/10 dark:bg-white/5"
+          className="h-11 flex-1 rounded-full border border-white/40 dark:border-white/10 bg-white/50 dark:bg-white/5 px-4 text-sm outline-none ring-0 transition-colors focus:border-[hsl(var(--primary)/0.5)]"
         />
         <Button type="submit" disabled={pending || !input.trim()} size="icon">
           <Send className="h-4 w-4" />
           <span className="sr-only">{t('send')}</span>
         </Button>
       </form>
+    </div>
+  );
+}
+
+function Bubble({
+  role,
+  parts,
+  pending,
+}: {
+  role: 'user' | 'assistant';
+  parts: ChatPart[];
+  pending?: boolean;
+}) {
+  return (
+    <div className={cn('flex', role === 'user' ? 'justify-end' : 'justify-start')}>
+      <div
+        className={cn(
+          'max-w-[92%] space-y-1.5 rounded-2xl px-4 py-2 text-sm leading-relaxed',
+          role === 'user'
+            ? 'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]'
+            : 'border border-white/40 dark:border-white/10 bg-white/60 dark:bg-white/5',
+          pending && 'opacity-90',
+        )}
+      >
+        {parts.map((part, i) =>
+          part.kind === 'text' ? (
+            <p key={i} className="whitespace-pre-wrap break-words">
+              {part.value}
+            </p>
+          ) : (
+            <ToolCard key={i} payload={part.payload} />
+          ),
+        )}
+      </div>
+    </div>
+  );
+}
+
+const ZH_SUGGESTIONS = [
+  '介绍一下你最硬核的项目',
+  '你的研究方向是什么？',
+  '能发我一份简历吗？',
+];
+const EN_SUGGESTIONS = [
+  'Walk me through your most hardcore project',
+  'What is your research direction?',
+  'Send me your resume',
+];
+
+function Suggestions({
+  locale,
+  onPick,
+}: {
+  locale: Locale;
+  onPick: (q: string) => void;
+}) {
+  const items = locale === 'zh' ? ZH_SUGGESTIONS : EN_SUGGESTIONS;
+  return (
+    <div className="grid h-full place-items-center px-4 text-center">
+      <div className="space-y-3">
+        <p className="text-sm text-muted-foreground">
+          {locale === 'zh' ? '试试这些问题：' : 'Try one of these:'}
+        </p>
+        <div className="flex flex-wrap justify-center gap-2">
+          {items.map((q) => (
+            <button
+              key={q}
+              type="button"
+              onClick={() => onPick(q)}
+              className="rounded-full border border-white/40 dark:border-white/10 bg-white/60 dark:bg-white/[0.04] px-3 py-1.5 text-xs text-foreground/80 transition-colors hover:border-[hsl(var(--primary)/0.4)] hover:text-foreground"
+            >
+              {q}
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

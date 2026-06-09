@@ -250,7 +250,62 @@
   }
 }
 
-/* Reduced motion: disable the heavy animations. */
+/* ────────────────────────────────────────────────────────────────────────── */
+/* Motion utilities: reveal-up + token-reveal used by components/motion/*     */
+/* ────────────────────────────────────────────────────────────────────────── */
+
+@keyframes reveal-up-frames {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes token-reveal-frames {
+  from {
+    opacity: 0;
+    transform: translateY(0.4em);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.reveal-up {
+  opacity: 0;
+  transform: translateY(14px);
+}
+
+.reveal-up.is-visible {
+  animation: reveal-up-frames 720ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.reveal-token {
+  opacity: 0;
+  animation: token-reveal-frames 620ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  white-space: pre;
+}
+
+/* View Transitions API: pleasant default for navigations between routes. */
+@supports (view-transition-name: none) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 320ms;
+    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  ::view-transition-old(detail-hero),
+  ::view-transition-new(detail-hero) {
+    animation-duration: 420ms;
+    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+
+/* Reduced motion: disable heavy animations + motion-rich micro-interactions. */
 @media (prefers-reduced-motion: reduce) {
   .animate-aurora-drift,
   .animate-glass-shimmer,
@@ -263,5 +318,15 @@
 
   .animated-logo-text::after {
     transition: none;
+  }
+
+  .reveal-up,
+  .reveal-token {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  html {
+    scroll-behavior: auto;
   }
 }

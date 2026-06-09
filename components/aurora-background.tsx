@@ -1,9 +1,15 @@
 import { cn } from '@/lib/utils';
 
 /**
- * Lightweight aurora background: fewer blobs, softer blur, and no heavy
- * desktop-wide blend stack on mobile. Keeps the visual language while cutting
- * down compositor work on scroll and pointer interaction.
+ * Background stack:
+ *   - base wash
+ *   - two drifting aurora blobs wrapped in a parallax frame that reads
+ *     --pointer-x / --pointer-y (written by AuroraEffects on client)
+ *   - SVG fractal noise grain to kill banding
+ *   - vignette for typographic readability
+ *
+ * Stays server-rendered so the static decoration paints with the first byte.
+ * The parallax layer is purely CSS-driven — no JS required.
  */
 export function AuroraBackground({ className }: { className?: string }) {
   return (
@@ -14,11 +20,16 @@ export function AuroraBackground({ className }: { className?: string }) {
         className,
       )}
     >
-      {/* Static base wash so the page never goes pure-white before paint. */}
       <div className="absolute inset-0 bg-gradient-to-b from-[hsl(var(--background))] via-transparent to-[hsl(var(--background))]" />
 
-      {/* Drifting aurora blobs. Reduced from four layers to two. */}
-      <div className="absolute -inset-[12%]">
+      <div
+        className="absolute -inset-[14%] will-change-transform"
+        style={{
+          transform:
+            'translate3d(calc(var(--pointer-x, 0) * 18px), calc(var(--pointer-y, 0) * 12px), 0)',
+          transition: 'transform 1.2s cubic-bezier(0.16,1,0.3,1)',
+        }}
+      >
         <div
           className="absolute left-[2%] top-[6%] h-[54vmax] w-[54vmax] rounded-full opacity-50 blur-[72px] md:blur-[96px] md:animate-aurora-drift"
           style={{
@@ -35,18 +46,25 @@ export function AuroraBackground({ className }: { className?: string }) {
             animationDelay: '-8s',
           }}
         />
+        <div
+          className="absolute left-[28%] top-[58%] h-[42vmax] w-[42vmax] rounded-full opacity-35 blur-[88px] md:animate-aurora-drift"
+          style={{
+            background:
+              'radial-gradient(circle at 50% 50%, hsl(var(--aurora-3) / 0.55), transparent 60%)',
+            animationDelay: '-14s',
+          }}
+        />
       </div>
 
-      {/* Subtle grain to remove banding on the gradients. */}
+      {/* SVG fractal noise — slightly more present than before. */}
       <div
-        className="absolute inset-0 opacity-[0.04]"
+        className="absolute inset-0 opacity-[0.06] mix-blend-overlay dark:opacity-[0.09] dark:mix-blend-screen"
         style={{
           backgroundImage:
-            "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E\")",
+            "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.65'/%3E%3C/svg%3E\")",
         }}
       />
 
-      {/* Vignette / readability mask. */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,hsl(var(--background)/0.55)_85%)]" />
     </div>
   );
