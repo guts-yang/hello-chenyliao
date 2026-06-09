@@ -2,7 +2,7 @@
   "name": "hello-chenyliao",
   "version": "0.1.0",
   "private": true,
-  "description": "基于 Next.js 15 与 Go 1.25 的个人主页全栈模板：前端负责展示与路由，Go API 收口内容管理、鉴权、媒体上传与 AI 对话，开箱即用且支持中英双语。",
+  "description": "gutsyang 的 Next.js 双语个人主页/作品集，展示个人简介、项目经历与 AI 助手。",
   "scripts": {
     "dev": "next dev",
     "dev:frontend": "next dev",
@@ -11,37 +11,22 @@
     "start": "next start",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "typecheck": "tsc --noEmit",
-    "test:backend": "cd backend && go test ./...",
-    "db:up": "docker compose up -d",
-    "db:down": "docker compose down",
-    "db:migrate": "cd backend && go run ./cmd/api migrate up",
-    "db:status": "cd backend && go run ./cmd/api migrate status",
-    "content:import": "cd backend && go run ./cmd/api content import",
-    "content:export": "cd backend && go run ./cmd/api content export",
-    "admin:reset-password": "cd backend && go run ./cmd/api reset-password",
-    "admin:set-email": "cd backend && go run ./cmd/api set-email"
+    "test:backend": "cd backend && go test ./..."
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.2",
-    "@radix-ui/react-dropdown-menu": "^2.1.2",
-    "@radix-ui/react-label": "^2.1.0",
     "@radix-ui/react-slot": "^1.1.0",
-    "@radix-ui/react-tabs": "^1.1.1",
-    "@radix-ui/react-toast": "^1.2.2",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
-    "cmdk": "^1.0.0",
     "framer-motion": "^11.11.17",
     "lucide-react": "^0.460.0",
     "next": "^15.5.18",
     "next-intl": "^4.12.0",
-    "next-mdx-remote": "^6.0.0",
     "next-themes": "^0.4.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "tailwind-merge": "^2.5.4",
-    "tailwindcss-animate": "^1.0.7",
-    "zod": "^3.23.8"
+    "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
     "@types/node": "^20.17.6",

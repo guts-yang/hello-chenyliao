@@ -2,7 +2,12 @@
 
 import * as React from 'react';
 import { cn } from '@/lib/utils';
-import type { TocEntry } from '@/lib/mdx';
+
+export type TocEntry = {
+  id: string;
+  level: 2 | 3;
+  text: string;
+};
 
 export function TocSidebar({ entries, title }: { entries: TocEntry[]; title: string }) {
   const [activeId, setActiveId] = React.useState<string | null>(entries[0]?.id ?? null);

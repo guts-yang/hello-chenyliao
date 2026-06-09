@@ -4,7 +4,6 @@ import {
   getProfile,
   getProjectBySlug,
   getExperienceBySlug,
-  getPostBySlug,
 } from '@/lib/content';
 import { pickLocale } from '@/lib/profile';
 import type { Locale } from '@/i18n';
@@ -14,7 +13,7 @@ export const dynamic = 'force-dynamic';
 
 const SIZE = { width: 1200, height: 630 };
 
-type OgType = 'project' | 'experience' | 'post' | 'home';
+type OgType = 'project' | 'experience' | 'home';
 
 export async function GET(
   req: NextRequest,
@@ -42,12 +41,6 @@ export async function GET(
     eyebrow = locale === 'zh' ? '经历' : 'EXPERIENCE';
     title = pickLocale(e.org, locale);
     subtitle = pickLocale(e.role, locale);
-  } else if (type === 'post') {
-    const post = await getPostBySlug(slug);
-    if (!post) return new Response('not found', { status: 404 });
-    eyebrow = locale === 'zh' ? '博客' : 'WRITING';
-    title = pickLocale(post.title, locale);
-    subtitle = pickLocale(post.excerpt, locale);
   } else {
     eyebrow = profile.handle;
     title = locale === 'zh' ? `${profile.nameZh} · ${profile.nameEn}` : profile.nameEn;

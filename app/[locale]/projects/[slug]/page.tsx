@@ -4,12 +4,11 @@ import { Github, ExternalLink } from 'lucide-react';
 import { DetailLayout } from '@/components/detail/detail-layout';
 import { DetailHero } from '@/components/detail/detail-hero';
 import { PrevNext } from '@/components/detail/prev-next';
-import { ViewCounter } from '@/components/detail/view-counter';
 import { pickLocale } from '@/lib/profile';
 import { getProjects, getProjectBySlug } from '@/lib/content';
 import { formatDate } from '@/lib/utils';
 import { locales, type Locale } from '@/i18n';
-import type { TocEntry } from '@/lib/mdx';
+import type { TocEntry } from '@/components/detail/toc-sidebar';
 import type { Metadata } from 'next';
 
 export async function generateStaticParams() {
@@ -94,7 +93,6 @@ export default async function ProjectDetailPage({
                 {formatDate(project.startedAt, locale)}
                 {project.endedAt ? ` — ${formatDate(project.endedAt, locale)}` : ''}
               </span>
-              <ViewCounter scope="project" id={project.slug} />
             </span>
           }
           tags={project.tags}
