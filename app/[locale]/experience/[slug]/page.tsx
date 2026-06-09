@@ -4,12 +4,11 @@ import { Briefcase } from 'lucide-react';
 import { DetailLayout } from '@/components/detail/detail-layout';
 import { DetailHero } from '@/components/detail/detail-hero';
 import { PrevNext } from '@/components/detail/prev-next';
-import { ViewCounter } from '@/components/detail/view-counter';
 import { pickLocale } from '@/lib/profile';
 import { getExperiences, getExperienceBySlug } from '@/lib/content';
 import { formatDate } from '@/lib/utils';
 import { locales, type Locale } from '@/i18n';
-import type { TocEntry } from '@/lib/mdx';
+import type { TocEntry } from '@/components/detail/toc-sidebar';
 import type { Metadata } from 'next';
 
 export async function generateStaticParams() {
@@ -22,11 +21,12 @@ export async function generateStaticParams() {
 export async function generateMetadata({
   params,
 }: {
-  params: { locale: string; slug: string };
+  params: Promise<{ locale: string; slug: string }>;
 }): Promise<Metadata> {
-  const exp = await getExperienceBySlug(params.slug);
+  const { locale: rawLocale, slug } = await params;
+  const exp = await getExperienceBySlug(slug);
   if (!exp) return {};
-  const locale = params.locale as Locale;
+  const locale = rawLocale as Locale;
   return {
     title: pickLocale(exp.org, locale),
     description: pickLocale(exp.summary, locale),
@@ -39,13 +39,14 @@ export async function generateMetadata({
 export default async function ExperienceDetailPage({
   params,
 }: {
-  params: { locale: string; slug: string };
+  params: Promise<{ locale: string; slug: string }>;
 }) {
-  setRequestLocale(params.locale);
-  const exp = await getExperienceBySlug(params.slug);
+  const { locale: rawLocale, slug } = await params;
+  setRequestLocale(rawLocale);
+  const exp = await getExperienceBySlug(slug);
   if (!exp) notFound();
 
-  const locale = params.locale as Locale;
+  const locale = rawLocale as Locale;
   const experiences = await getExperiences();
   const idx = experiences.findIndex((e) => e.slug === exp.slug);
   const prev = idx > 0 ? experiences[idx - 1] : null;
@@ -84,7 +85,6 @@ export default async function ExperienceDetailPage({
           title={pickLocale(exp.org, locale)}
           tagline={pickLocale(exp.role, locale)}
           transitionName={`experience-title-${exp.slug}`}
-          meta={<ViewCounter scope="experience" id={exp.slug} />}
         />
       }
       footer={

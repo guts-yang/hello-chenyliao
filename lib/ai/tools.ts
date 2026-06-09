@@ -24,10 +24,6 @@ export type ToolPayload =
       items: Array<{ slug: string; title: string; tagline: string; href: string }>;
     }
   | {
-      kind: 'posts';
-      items: Array<{ slug: string; title: string; excerpt: string; href: string }>;
-    }
-  | {
       kind: 'experience';
       slug: string;
       org: string;
@@ -68,18 +64,6 @@ export const TOOL_DEFS: ToolDef[] = [
       type: 'object',
       properties: {
         query: { type: 'string', description: 'Free-text search query.' },
-      },
-      required: ['query'],
-    },
-  },
-  {
-    name: 'search_posts',
-    description:
-      'Find blog posts by free-text query. Prefer this for "have you written about X?" style questions.',
-    parameters: {
-      type: 'object',
-      properties: {
-        query: { type: 'string' },
       },
       required: ['query'],
     },
@@ -138,22 +122,6 @@ export async function executeTool(
             })),
         };
       }
-      case 'search_posts': {
-        const q = typeof args.query === 'string' ? args.query : '';
-        const hits = await searchAll(q, ctx.locale, 6);
-        return {
-          kind: 'posts',
-          items: hits
-            .filter((h) => h.scope === 'post')
-            .slice(0, 4)
-            .map((h) => ({
-              slug: h.slug,
-              title: pickLocale(h.title, ctx.locale),
-              excerpt: pickLocale(h.excerpt, ctx.locale),
-              href: h.href,
-            })),
-        };
-      }
       case 'show_project': {
         const slug = String(args.slug ?? '');
         const p = await getProjectBySlug(slug);
@@ -207,11 +175,6 @@ export function summarizeToolResult(payload: ToolPayload): string {
       if (payload.items.length === 0) return 'No matching projects.';
       return payload.items
         .map((p, i) => `${i + 1}. ${p.title} — ${p.tagline} (${p.href})`)
-        .join('\n');
-    case 'posts':
-      if (payload.items.length === 0) return 'No matching posts.';
-      return payload.items
-        .map((p, i) => `${i + 1}. ${p.title} — ${p.excerpt} (${p.href})`)
         .join('\n');
     case 'project':
       return `Project ${payload.title}: ${payload.tagline}. Summary: ${payload.summary}. URL: ${payload.href}`;

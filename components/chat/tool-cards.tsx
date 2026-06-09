@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { ArrowRight, FileDown, Briefcase, FolderGit2, NotebookText, AlertCircle } from 'lucide-react';
+import { ArrowRight, FileDown, Briefcase, FolderGit2, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // The shapes here mirror lib/ai/tools.ts ToolPayload. Re-declared on purpose:
@@ -9,10 +9,6 @@ export type ToolPayload =
   | {
       kind: 'projects';
       items: Array<{ slug: string; title: string; tagline: string; href: string }>;
-    }
-  | {
-      kind: 'posts';
-      items: Array<{ slug: string; title: string; excerpt: string; href: string }>;
     }
   | {
       kind: 'experience';
@@ -44,18 +40,6 @@ export function ToolCard({ payload }: { payload: ToolPayload }) {
             href: p.href,
             title: p.title,
             subtitle: p.tagline,
-          }))}
-        />
-      );
-    case 'posts':
-      return (
-        <ToolList
-          title="Posts"
-          icon={NotebookText}
-          items={payload.items.map((p) => ({
-            href: p.href,
-            title: p.title,
-            subtitle: p.excerpt,
           }))}
         />
       );

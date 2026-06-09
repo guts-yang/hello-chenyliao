@@ -9,7 +9,6 @@ import { GlowCursor } from '@/components/glow-cursor';
 import { SiteHeader } from '@/components/site-header';
 import { SiteFooter } from '@/components/site-footer';
 import { EasterEggs } from '@/components/easter-eggs';
-import { CommandPalette } from '@/components/cmdk/command-palette';
 import { locales, type Locale } from '@/i18n';
 
 export function generateStaticParams() {
@@ -31,14 +30,6 @@ export async function generateMetadata({
       languages: {
         zh: '/zh',
         en: '/en',
-      },
-      types: {
-        'application/rss+xml': [
-          { url: `/api/feed.xml?lang=${locale}`, title: `${t('title')} RSS` },
-        ],
-        'application/feed+json': [
-          { url: `/api/feed.json?lang=${locale}`, title: `${t('title')} JSON Feed` },
-        ],
       },
     },
     openGraph: {
@@ -72,7 +63,6 @@ export default async function LocaleLayout({
         <AuroraEffects />
         <GlowCursor />
         <EasterEggs />
-        <CommandPalette />
         <div className="flex min-h-screen flex-col">
           <SiteHeader />
           <main className="flex-1 pt-6">{children}</main>

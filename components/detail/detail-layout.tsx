@@ -2,7 +2,7 @@ import * as React from 'react';
 import { BackLink } from '@/components/back-link';
 import { ReadingProgress } from './reading-progress';
 import { TocSidebar } from './toc-sidebar';
-import type { TocEntry } from '@/lib/mdx';
+import type { TocEntry } from './toc-sidebar';
 
 /**
  * Shared layout shell for project / experience / blog post detail pages.
