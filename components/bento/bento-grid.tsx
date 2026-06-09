@@ -7,6 +7,7 @@ import { HonorsCard } from './honors-card';
 import { TimelineCard } from './timeline-card';
 import { EducationCard } from './education-card';
 import { ResumeDownloadCard } from './resume-download-card';
+import { RevealGradientText } from '@/components/animated-text';
 import { Reveal } from '@/components/motion';
 import {
   getProfile,
@@ -19,7 +20,14 @@ import {
 
 export async function BentoGrid({ locale }: { locale: Locale }) {
   const t = await getTranslations({ locale, namespace: 'sections' });
-  const { profile, projects, experiences, honors, education, timeline } = await getHomeContent();
+  const [profile, projects, experiences, honors, education, timeline] = await Promise.all([
+    getProfile(),
+    getProjects(),
+    getExperiences(),
+    getHonors(),
+    getEducation(),
+    getTimeline(),
+  ]);
 
   const projectCards = projects.slice(0, 3);
   const academicHero = projectCards.find((p) => p.kind === 'academic') ?? projectCards[0];
@@ -107,7 +115,9 @@ function SectionHeader({
       id={id}
       className="mt-8 flex items-end justify-between gap-4 md:col-span-12 md:mt-10"
     >
-      <h2 className="display-headline text-3xl text-gradient sm:text-4xl md:text-5xl">{title}</h2>
+      <h2 className="display-headline text-3xl sm:text-4xl md:text-5xl">
+        <RevealGradientText text={title} />
+      </h2>
       {subtitle && (
         <p className="hidden text-sm text-muted-foreground sm:block">{subtitle}</p>
       )}

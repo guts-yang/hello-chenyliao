@@ -10,8 +10,8 @@ import {
   User,
   LogOut,
   ExternalLink,
-  PenSquare,
-  BarChart3,
+  Settings,
+  ScrollText,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
@@ -58,25 +58,32 @@ export function AdminSidebar({ email }: { email: string }) {
         </p>
       </div>
       <nav className="flex flex-col gap-1">
-        {items.map((item) => {
-          const Icon = item.icon;
-          const active = item.exact ? pathname === item.href : pathname.startsWith(item.href);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                'inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm transition-colors',
-                active
-                  ? 'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]'
-                  : 'text-muted-foreground hover:bg-white/40 hover:text-foreground dark:hover:bg-white/10',
-              )}
-            >
-              <Icon className="h-4 w-4" />
-              {item.label}
-            </Link>
-          );
-        })}
+        {groups.map((group) => (
+          <div key={group.title} className="flex flex-col gap-1">
+            <p className="px-3 pt-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+              {group.title}
+            </p>
+            {group.items.map((item) => {
+              const Icon = item.icon;
+              const active = item.exact ? pathname === item.href : pathname.startsWith(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    'inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm transition-colors',
+                    active
+                      ? 'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]'
+                      : 'text-muted-foreground hover:bg-white/40 hover:text-foreground dark:hover:bg-white/10',
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+        ))}
       </nav>
       <div className="mt-auto flex flex-col gap-2 pt-3">
         <Link

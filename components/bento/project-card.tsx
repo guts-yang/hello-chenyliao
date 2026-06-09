@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { ArrowUpRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { HoverSplitText } from '@/components/animated-text';
 import { GlassCard } from '@/components/glass-card';
 import { Badge } from '@/components/ui/badge';
 import { TransitionLink } from '@/components/transition-link';
@@ -45,9 +46,11 @@ export function ProjectCard({
                 className="display-headline text-2xl sm:text-3xl"
                 style={{ viewTransitionName: `project-title-${project.slug}` }}
               >
-                {pickLocale(project.title, locale)}
+                <HoverSplitText>{pickLocale(project.title, locale)}</HoverSplitText>
               </h3>
-              <p className="text-sm text-muted-foreground">{pickLocale(project.tagline, locale)}</p>
+              <p className="text-sm text-muted-foreground transition-colors duration-300 group-hover:text-foreground/75">
+                {pickLocale(project.tagline, locale)}
+              </p>
             </div>
 
             {project.highlights.length > 0 && (

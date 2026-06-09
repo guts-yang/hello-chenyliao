@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { ThemeToggle } from './theme-toggle';
 import { LocaleToggle } from './locale-toggle';
 import { AiPlugin } from './chat/ai-plugin';
+import { MagneticLogoText } from './animated-text';
 
 export function SiteHeader() {
   const t = useTranslations('nav');
@@ -45,9 +46,7 @@ export function SiteHeader() {
         )}
       >
         <Link href={base} className="flex items-center gap-2 pl-1">
-          <span className="display-headline text-lg font-semibold tracking-tight text-gradient">
-            gutsyang
-          </span>
+          <MagneticLogoText>gutsyang</MagneticLogoText>
         </Link>
         <nav className="hidden items-center gap-1 md:flex">
           {navItems.map((item) => (

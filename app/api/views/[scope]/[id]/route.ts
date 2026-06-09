@@ -9,8 +9,12 @@ const ALLOWED_SCOPES = new Set(['project', 'experience', 'post', 'home']);
 // Very lightweight in-memory rate limit: a visitor (fingerprint = ip+ua hash)
 // can only bump the same ref_id once per ~60s. Resets every cold start; that
 // is acceptable for the "tasteful counter" use-case.
-const RATE: Map<string, number> = (globalThis as any).__viewRate ||
-  ((globalThis as any).__viewRate = new Map<string, number>());
+type ViewRateGlobal = typeof globalThis & {
+  __viewRate?: Map<string, number>;
+};
+
+const viewGlobal = globalThis as ViewRateGlobal;
+const RATE = viewGlobal.__viewRate ?? (viewGlobal.__viewRate = new Map<string, number>());
 const WINDOW_MS = 60_000;
 
 function fingerprint(req: NextRequest): string {
@@ -39,30 +43,32 @@ async function readCount(scope: string, id: string): Promise<number> {
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { scope: string; id: string } },
+  { params }: { params: Promise<{ scope: string; id: string }> },
 ) {
-  if (!ALLOWED_SCOPES.has(params.scope)) {
+  const { scope, id } = await params;
+  if (!ALLOWED_SCOPES.has(scope)) {
     return NextResponse.json({ error: 'unknown scope' }, { status: 400 });
   }
-  const count = await readCount(params.scope, params.id);
-  return NextResponse.json({ scope: params.scope, ref_id: params.id, count });
+  const count = await readCount(scope, id);
+  return NextResponse.json({ scope, ref_id: id, count });
 }
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { scope: string; id: string } },
+  { params }: { params: Promise<{ scope: string; id: string }> },
 ) {
-  if (!ALLOWED_SCOPES.has(params.scope)) {
+  const { scope, id } = await params;
+  if (!ALLOWED_SCOPES.has(scope)) {
     return NextResponse.json({ error: 'unknown scope' }, { status: 400 });
   }
 
-  const fp = `${params.scope}:${params.id}:${fingerprint(req)}`;
+  const fp = `${scope}:${id}:${fingerprint(req)}`;
   const now = Date.now();
   const last = RATE.get(fp) ?? 0;
   if (now - last < WINDOW_MS) {
     // Soft no-op: return current count without bumping.
-    const count = await readCount(params.scope, params.id);
-    return NextResponse.json({ scope: params.scope, ref_id: params.id, count, throttled: true });
+    const count = await readCount(scope, id);
+    return NextResponse.json({ scope, ref_id: id, count, throttled: true });
   }
   RATE.set(fp, now);
 
@@ -71,19 +77,19 @@ export async function POST(
   const admin = createSupabaseAdminClient();
   const sb = admin ?? createSupabaseAnonClient();
   if (!sb) {
-    return NextResponse.json({ scope: params.scope, ref_id: params.id, count: 0, mocked: true });
+    return NextResponse.json({ scope, ref_id: id, count: 0, mocked: true });
   }
 
   const { data, error } = await sb.rpc('increment_view', {
-    p_scope: params.scope,
-    p_ref_id: params.id,
+    p_scope: scope,
+    p_ref_id: id,
   });
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
   return NextResponse.json({
-    scope: params.scope,
-    ref_id: params.id,
+    scope,
+    ref_id: id,
     count: typeof data === 'number' ? data : 0,
   });
 }

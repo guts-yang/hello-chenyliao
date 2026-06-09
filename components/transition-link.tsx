@@ -4,12 +4,6 @@ import * as React from 'react';
 import NextLink, { type LinkProps } from 'next/link';
 import { useRouter } from 'next/navigation';
 
-declare global {
-  interface Document {
-    startViewTransition?: (cb: () => void | Promise<void>) => { finished: Promise<void> };
-  }
-}
-
 /**
  * Drop-in replacement for `next/link` that wraps the navigation in a native
  * View Transition when supported. Browsers without the API fall back to a

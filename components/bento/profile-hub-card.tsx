@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { useTranslations } from 'next-intl';
 import { Github, MessageCircle, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { AuroraText, RotatingPhraseText } from '@/components/animated-text';
 import { GlassCard } from '@/components/glass-card';
 import { Badge } from '@/components/ui/badge';
 import { pickLocale } from '@/lib/profile';
@@ -13,6 +14,11 @@ import type { Locale } from '@/i18n';
 import type { ProfileBundle } from '@/lib/content';
 
 const WECHAT_QR_SRC = '/wechat-qr-placeholder.jpg';
+
+const focusPhrases = {
+  zh: ['LLM 机器遗忘', '多智能体系统', 'AI 工具链', '全栈产品化'],
+  en: ['LLM unlearning', 'multi-agent systems', 'AI tooling', 'full-stack products'],
+} as const;
 
 const iconFor = {
   github: Github,
@@ -42,7 +48,11 @@ export function ProfileHubCard({
   const displayName = locale === 'zh' ? profile.nameZh : profile.nameEn;
   const initials = profile.handle.slice(0, 2).toUpperCase();
 
-  const visibleSocials = profile.socials.filter((s) => isVisibleSocial(s.type));
+  const visibleSocials: Array<(typeof profile.socials)[number] & { type: VisibleSocialType }> =
+    profile.socials.filter(
+      (s): s is (typeof profile.socials)[number] & { type: VisibleSocialType } =>
+        isVisibleSocial(s.type),
+    );
 
   // Close on Escape and lock the background scroll while the modal is open so
   // users on small screens cannot accidentally scroll the page underneath the
@@ -70,103 +80,132 @@ export function ProfileHubCard({
   return (
     <>
       <GlassCard density="comfy" className={cn('group', className)}>
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="flex h-full flex-col justify-between gap-6 lg:gap-10"
-      >
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.05 }}
-          className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between lg:gap-10"
+          transition={{ duration: 0.5 }}
+          className="flex h-full flex-col justify-between gap-6 lg:gap-10"
         >
-          <div className="space-y-3 lg:space-y-4">
-            <Badge tone="accent" className="uppercase tracking-[0.2em]">
-              {tProfile('openToRoles')}
-            </Badge>
-            <p className="text-sm text-muted-foreground">{t('hero.greeting')}</p>
-            <h1
-              className={cn(
-                'text-foreground',
-                locale === 'zh' ? 'name-art' : 'display-headline',
-              )}
-              style={{ fontSize: 'clamp(3rem, 8.5vw, 8rem)', lineHeight: 0.95 }}
-            >
-              <span className="text-gradient">{displayName}</span>
-            </h1>
-            <p className="text-base font-medium text-foreground/85 sm:text-lg lg:text-xl">
-              {pickLocale(profile.role, locale)}
-            </p>
-          </div>
-
           <motion.div
-            initial={{ scale: 0.92, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.6, ease: 'easeOut' }}
-            className="relative hidden h-28 w-28 shrink-0 sm:block lg:h-36 lg:w-36"
-          >
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 18, repeat: Infinity, ease: 'linear' }}
-              className="absolute -inset-1.5 rounded-full bg-[conic-gradient(from_0deg,hsl(var(--aurora-1)),hsl(var(--aurora-2)),hsl(var(--aurora-3)),hsl(var(--aurora-4)),hsl(var(--aurora-1)))] blur-md opacity-80"
-            />
-            <div className="relative grid h-full w-full place-items-center overflow-hidden rounded-full bg-white/70 text-3xl font-bold text-gradient backdrop-blur-md dark:bg-zinc-900/70 lg:text-5xl">
-              {profile.avatarUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={profile.avatarUrl} alt={displayName} className="h-full w-full object-cover" />
-              ) : (
-                initials
-              )}
-            </div>
-          </motion.div>
-        </motion.div>
-
-        <div className="grid gap-5 sm:grid-cols-1 lg:grid-cols-[2fr_1fr] lg:gap-10">
-          <div className="space-y-2">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-              {tProfile('about')}
-            </p>
-            <p className="text-pretty text-base leading-relaxed text-foreground/90 sm:text-lg lg:text-xl">
-              {pickLocale(profile.slogan, locale)}
-            </p>
-            <p className="text-sm leading-relaxed text-muted-foreground sm:text-base">
-              {pickLocale(profile.bio, locale)}
-            </p>
-          </div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.45, delay: 0.12 }}
-            className="flex flex-col gap-3 lg:items-end lg:text-right"
+            transition={{ duration: 0.5, delay: 0.05 }}
+            className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between lg:gap-10"
           >
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-              {tProfile('contact')}
-            </p>
-            <motion.div
-              initial="hidden"
-              animate="show"
-              variants={{
-                hidden: {},
-                show: { transition: { staggerChildren: 0.06, delayChildren: 0.15 } },
-              }}
-              className="flex flex-wrap items-center gap-2 lg:justify-end"
-            >
-              {visibleSocials.map((s) => {
-                const Icon = iconFor[s.type];
-                const isWechat = s.type === 'wechat';
-                const label = t(`social.${s.type}` as 'social.github' | 'social.wechat');
+            <div className="space-y-3 lg:space-y-4">
+              <Badge tone="accent" className="uppercase tracking-[0.2em]">
+                {tProfile('openToRoles')}
+              </Badge>
+              <p className="text-sm text-muted-foreground">{t('hero.greeting')}</p>
+              <h1
+                className={cn(
+                  'text-foreground',
+                  locale === 'zh' ? 'name-art' : 'display-headline',
+                )}
+                style={{ fontSize: 'clamp(3rem, 8.5vw, 8rem)', lineHeight: 0.95 }}
+              >
+                <AuroraText>{displayName}</AuroraText>
+              </h1>
+              <p className="text-base font-medium text-foreground/85 sm:text-lg lg:text-xl">
+                {pickLocale(profile.role, locale)}
+              </p>
+            </div>
 
-                if (isWechat) {
+            <motion.div
+              initial={{ scale: 0.92, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.6, ease: 'easeOut' }}
+              className="relative hidden h-28 w-28 shrink-0 sm:block lg:h-36 lg:w-36"
+            >
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 18, repeat: Infinity, ease: 'linear' }}
+                className="absolute -inset-1.5 rounded-full bg-[conic-gradient(from_0deg,hsl(var(--aurora-1)),hsl(var(--aurora-2)),hsl(var(--aurora-3)),hsl(var(--aurora-4)),hsl(var(--aurora-1)))] blur-md opacity-80"
+              />
+              <div className="relative grid h-full w-full place-items-center overflow-hidden rounded-full bg-white/70 text-3xl font-bold text-gradient backdrop-blur-md dark:bg-zinc-900/70 lg:text-5xl">
+                {profile.avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={profile.avatarUrl}
+                    alt={displayName}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  initials
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+
+          <div className="grid gap-5 sm:grid-cols-1 lg:grid-cols-[2fr_1fr] lg:gap-10">
+            <div className="space-y-2">
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                {tProfile('about')}
+              </p>
+              <p className="text-pretty text-base leading-relaxed text-foreground/90 sm:text-lg lg:text-xl">
+                {pickLocale(profile.slogan, locale)}
+              </p>
+              <RotatingPhraseText
+                prefix={locale === 'zh' ? '正在打磨' : 'Crafting'}
+                phrases={focusPhrases[locale]}
+              />
+              <p className="text-sm leading-relaxed text-muted-foreground sm:text-base">
+                {pickLocale(profile.bio, locale)}
+              </p>
+            </div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, delay: 0.12 }}
+              className="flex flex-col gap-3 lg:items-end lg:text-right"
+            >
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                {tProfile('contact')}
+              </p>
+              <motion.div
+                initial="hidden"
+                animate="show"
+                variants={{
+                  hidden: {},
+                  show: { transition: { staggerChildren: 0.06, delayChildren: 0.15 } },
+                }}
+                className="flex flex-wrap items-center gap-2 lg:justify-end"
+              >
+                {visibleSocials.map((s) => {
+                  const Icon = iconFor[s.type];
+                  const isWechat = s.type === 'wechat';
+                  const label =
+                    s.type === 'github' || s.type === 'wechat'
+                      ? t(`social.${s.type}` as 'social.github' | 'social.wechat')
+                      : (s.label ?? s.type);
+
+                  if (isWechat) {
+                    return (
+                      <motion.button
+                        key={s.type}
+                        type="button"
+                        onClick={() => setWechatOpen((open) => !open)}
+                        aria-expanded={wechatOpen}
+                        aria-haspopup="dialog"
+                        variants={{
+                          hidden: { opacity: 0, y: 6 },
+                          show: { opacity: 1, y: 0 },
+                        }}
+                        className="group/social inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/40 px-3.5 py-1.5 text-xs font-medium backdrop-blur-md transition-all hover:-translate-y-0.5 hover:bg-white/60 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
+                      >
+                        <Icon className="h-3.5 w-3.5" />
+                        <span>{label}</span>
+                      </motion.button>
+                    );
+                  }
+
                   return (
-                    <motion.button
+                    <motion.a
                       key={s.type}
-                      type="button"
-                      onClick={() => setWechatOpen((open) => !open)}
-                      aria-expanded={wechatOpen}
-                      aria-haspopup="dialog"
+                      href={s.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       variants={{
                         hidden: { opacity: 0, y: 6 },
                         show: { opacity: 1, y: 0 },
@@ -175,31 +214,13 @@ export function ProfileHubCard({
                     >
                       <Icon className="h-3.5 w-3.5" />
                       <span>{label}</span>
-                    </motion.button>
+                    </motion.a>
                   );
-                }
-
-                return (
-                  <motion.a
-                    key={s.type}
-                    href={s.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    variants={{
-                      hidden: { opacity: 0, y: 6 },
-                      show: { opacity: 1, y: 0 },
-                    }}
-                    className="group/social inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/40 px-3.5 py-1.5 text-xs font-medium backdrop-blur-md transition-all hover:-translate-y-0.5 hover:bg-white/60 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
-                  >
-                    <Icon className="h-3.5 w-3.5" />
-                    <span>{label}</span>
-                  </motion.a>
-                );
-              })}
+                })}
+              </motion.div>
             </motion.div>
-          </motion.div>
-        </div>
-      </motion.div>
+          </div>
+        </motion.div>
       </GlassCard>
 
       {typeof document !== 'undefined' &&

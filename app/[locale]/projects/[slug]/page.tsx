@@ -54,7 +54,9 @@ export default async function ProjectDetailPage({
   const prev = idx > 0 ? projects[idx - 1] : null;
   const next = idx >= 0 && idx < projects.length - 1 ? projects[idx + 1] : null;
 
-  const stackEntries = Object.entries(project.stack ?? {}).filter(([, v]) => v?.length);
+  const stackEntries = Object.entries(project.stack ?? {}).filter(
+    (entry): entry is [string, string[]] => Array.isArray(entry[1]) && entry[1].length > 0,
+  );
   const gallery = project.gallery ?? [];
 
   const toc: TocEntry[] = [

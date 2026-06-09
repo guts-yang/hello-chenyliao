@@ -7,7 +7,7 @@ import { CodeBlock } from './code-block';
 // Match the `MDXComponents` shape exposed by next-mdx-remote/mdx-js without
 // taking a hard dependency on `mdx/types` (which is technically a transitive
 // dep and prone to resolution issues across versions).
-export type MdxComponentsMap = Record<string, React.ComponentType<any>>;
+export type MdxComponentsMap = Record<string, React.ElementType>;
 
 /**
  * MDX components map used by both posts and any future MDX-driven detail

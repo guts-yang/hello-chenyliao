@@ -13,8 +13,12 @@ const ContactSchema = z.object({
   hp: z.string().optional(),
 });
 
-const RATE: Map<string, number> = (globalThis as any).__contactRate ||
-  ((globalThis as any).__contactRate = new Map<string, number>());
+type ContactRateGlobal = typeof globalThis & {
+  __contactRate?: Map<string, number>;
+};
+
+const contactGlobal = globalThis as ContactRateGlobal;
+const RATE = contactGlobal.__contactRate ?? (contactGlobal.__contactRate = new Map<string, number>());
 const WINDOW_MS = 60_000;
 
 function fingerprint(req: NextRequest): string {

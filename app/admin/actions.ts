@@ -19,6 +19,8 @@ import type {
   SocialJson,
 } from '@/lib/api-types';
 import { fetchBackend } from '@/lib/backend';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { CONTENT_TAGS, type ContentTagName } from '@/lib/content';
 
 type LocalizedRow = LocalizedJson;
 import { optionalUrl } from '@/lib/admin-zod';
@@ -134,7 +136,7 @@ const ProfileSchema = z.object({
 });
 
 export async function saveProfile(_: unknown, fd: FormData) {
-  await assertAdminSession();
+  const supabase = await requireAdmin();
   const raw = {
     name_zh: readFormString(fd, 'name_zh'),
     name_en: readFormString(fd, 'name_en'),
@@ -193,7 +195,6 @@ const ProjectSchema = z.object({
 });
 
 export async function saveProject(_: unknown, fd: FormData) {
-  const supabase = await requireAdmin();
   const id = readFormString(fd, 'id') || null;
   const raw = {
     slug: readFormString(fd, 'slug'),
@@ -262,12 +263,6 @@ export async function saveProject(_: unknown, fd: FormData) {
     return { ok: false as const, message: text };
   }
 
-  const payload = { ...data, tags, highlights };
-  const { error } = id
-    ? await supabase.from('projects').update(payload).eq('id', id)
-    : await supabase.from('projects').insert(payload);
-  if (error) return { ok: false as const, message: error.message };
-
   bust(CONTENT_TAGS.projects, CONTENT_TAGS.timeline);
   redirect('/admin/projects');
 }
@@ -277,6 +272,7 @@ export async function deleteProject(id: string) {
   const { error } = await supabase.from('projects').delete().eq('id', id);
   if (error) throw new Error(error.message);
   bust(CONTENT_TAGS.projects, CONTENT_TAGS.timeline);
+  return { ok: true as const, message: '已删除' };
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -299,7 +295,6 @@ const ExperienceSchema = z.object({
 });
 
 export async function saveExperience(_: unknown, fd: FormData) {
-  const supabase = await requireAdmin();
   const id = readFormString(fd, 'id') || null;
   const raw = {
     slug: readFormString(fd, 'slug'),
@@ -358,12 +353,6 @@ export async function saveExperience(_: unknown, fd: FormData) {
     return { ok: false as const, message: text };
   }
 
-  const payload = { ...data, metrics };
-  const { error } = id
-    ? await supabase.from('experiences').update(payload).eq('id', id)
-    : await supabase.from('experiences').insert(payload);
-  if (error) return { ok: false as const, message: error.message };
-
   bust(CONTENT_TAGS.experiences, CONTENT_TAGS.timeline);
   redirect('/admin/experiences');
 }
@@ -373,6 +362,7 @@ export async function deleteExperience(id: string) {
   const { error } = await supabase.from('experiences').delete().eq('id', id);
   if (error) throw new Error(error.message);
   bust(CONTENT_TAGS.experiences, CONTENT_TAGS.timeline);
+  return { ok: true as const, message: '已删除' };
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -425,6 +415,7 @@ export async function deleteHonor(id: string) {
   const { error } = await supabase.from('honors').delete().eq('id', id);
   if (error) throw new Error(error.message);
   bust(CONTENT_TAGS.honors);
+  return { ok: true as const, message: '已删除' };
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -483,6 +474,7 @@ export async function deletePost(id: string) {
   const { error } = await supabase.from('posts').delete().eq('id', id);
   if (error) throw new Error(error.message);
   bust(CONTENT_TAGS.posts);
+  return { ok: true as const, message: '已删除' };
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -520,6 +512,7 @@ export async function deleteNote(id: string) {
   const { error } = await supabase.from('notes').delete().eq('id', id);
   if (error) throw new Error(error.message);
   bust(CONTENT_TAGS.notes);
+  return { ok: true as const, message: '已删除' };
 }
 
 // ──────────────────────────────────────────────────────────────────────────────

@@ -10,7 +10,7 @@ export default async function EditPostPage({ params }: { params: { id: string } 
   return (
     <div className="space-y-4">
       <h1 className="display-headline text-3xl text-gradient">编辑文章</h1>
-      <PostForm row={data as DbPostRow} />
+      <PostForm row={data as unknown as DbPostRow} />
     </div>
   );
 }

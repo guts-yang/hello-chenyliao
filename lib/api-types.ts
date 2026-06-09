@@ -56,14 +56,14 @@ export type DbProjectRow = {
   link: string | null;
   repo: string | null;
   cover_url: string | null;
-  gallery: GalleryItem[];
-  stack: StackJson;
+  gallery?: GalleryItem[];
+  stack?: StackJson;
   started_at: string;
   ended_at: string | null;
   display_order: number;
   is_published: boolean;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
 };
 
 export type DbExperienceRow = {
@@ -81,8 +81,8 @@ export type DbExperienceRow = {
   ended_at: string | null;
   display_order: number;
   is_published: boolean;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
 };
 
 export type DbHonorRow = {
@@ -202,4 +202,38 @@ export type DbChatMessageRow = {
   tool_name: string | null;
   tool_payload: Json | null;
   created_at: string;
+};
+
+export type AdminSession = {
+  authenticated: boolean;
+  user?: {
+    id: string;
+    email: string;
+  };
+};
+
+export type AdminSessionListItem = {
+  id: string;
+  email?: string;
+  ip?: string;
+  userAgent?: string;
+  current: boolean;
+  createdAt: string;
+  lastActiveAt?: string;
+  lastSeenAt: string;
+  expiresAt: string;
+};
+
+export type AdminContentStats = {
+  projects: number;
+  experiences: number;
+  honors: number;
+  posts?: number;
+  views?: number;
+};
+
+export type MediaUploadTicket = {
+  url: string;
+  publicUrl?: string;
+  fields?: Record<string, string>;
 };

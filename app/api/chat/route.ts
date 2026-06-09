@@ -20,6 +20,22 @@ type ToolCallSerialized = {
   function: { name: string; arguments: string };
 };
 
+type DeepSeekStreamChunk = {
+  choices?: Array<{
+    delta?: {
+      content?: string;
+      tool_calls?: Array<{
+        index?: number;
+        id?: string;
+        function?: {
+          name?: string;
+          arguments?: string;
+        };
+      }>;
+    };
+  }>;
+};
+
 /**
  * Streaming chat endpoint. Wire protocol on the response body is newline-
  * delimited JSON ("NDJSON"), one event per line:
@@ -188,7 +204,7 @@ async function* runChatLoop(opts: LoopOpts): AsyncGenerator<ChatEvent> {
             // wrap-up handled below
             continue;
           }
-          let parsed: any;
+          let parsed: DeepSeekStreamChunk;
           try {
             parsed = JSON.parse(payload);
           } catch {

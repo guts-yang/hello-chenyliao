@@ -18,10 +18,10 @@ type OgType = 'project' | 'experience' | 'post' | 'home';
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { type: string; slug: string } },
+  { params }: { params: Promise<{ type: string; slug: string }> },
 ) {
-  const type = (params.type as OgType) ?? 'home';
-  const slug = params.slug;
+  const { type: rawType, slug } = await params;
+  const type = (rawType as OgType) ?? 'home';
   const locale = (req.nextUrl.searchParams.get('lang') === 'en' ? 'en' : 'zh') as Locale;
 
   const profile = await getProfile();

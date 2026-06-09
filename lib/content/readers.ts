@@ -66,7 +66,7 @@ async function readProfile(): Promise<ProfileBundle> {
   if (!sb) return staticProfileBundle;
   const { data, error } = await sb.from('profile').select('*').eq('id', 'main').maybeSingle();
   if (error || !data) return staticProfileBundle;
-  return fromProfileRow(data as DbProfileRow);
+  return fromProfileRow(data as unknown as DbProfileRow);
 }
 
 async function readProjects(): Promise<Project[]> {
@@ -156,7 +156,7 @@ async function readSiteSettings(): Promise<SiteSettings | null> {
   if (!sb) return null;
   const { data, error } = await sb.from('site_settings').select('*').eq('id', 'main').maybeSingle();
   if (error || !data) return null;
-  return fromSiteSettingsRow(data as DbSiteSettingsRow);
+  return fromSiteSettingsRow(data as unknown as DbSiteSettingsRow);
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
