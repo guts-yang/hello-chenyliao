@@ -2,11 +2,12 @@
 
 这是 gutsyang 的双语个人主页 / 作品集，用来展示个人简介、项目作品、实践经历、荣誉与 AI 助手。
 
-架构为「个人站精简版 rainbow」：`config/` + `server/`（Go 模块化单体）+ `web/`（Vue 3 SPA）+ `utils/`。数据使用 MySQL，缓存/限流使用 Redis，媒体走可替换 ObjectStore（默认本地 `uploads/`，预留 S3）。
+架构为「个人站精简版 rainbow」：`config/` + `server/`（Go 模块化单体）+ `web/`（React 18 SPA）+ `utils/`。数据使用 MySQL，缓存/限流使用 Redis，媒体走可替换 ObjectStore（默认本地 `uploads/`，预留 S3）。
 
 ## 核心功能
 
-- Bento 风格首页：Profile、项目、经历、荣誉、教育和时间线集中展示。
+- Aura 风格深色电影感首页：Profile、项目、经历、荣誉、教育和时间线集中展示。
+- Prisma 暖奶油色视觉系统：黑色电影感背景、Almarai / Instrument Serif、pull-up 与滚动字符动画。
 - 项目 / 经历详情页：支持双语内容、目录、前后导航；SPA 动态更新 document title/meta（社交抓虫见下方说明）。
 - AI 助手：访客可用自然语言询问 profile、projects、experiences 和 resume；会话持久化到 MySQL（无 DB 时内存回退）。
 - Admin REST API：登录、CSRF、CMS CRUD、审计、翻译、媒体上传（暂无 Admin UI）。
@@ -14,7 +15,7 @@
 
 ## 技术栈
 
-- Frontend: Vue 3, Vite, Vue Router, Pinia, TypeScript, TDesign Vue Next, vue-i18n
+- Frontend: React 18, Vite, TypeScript, Tailwind CSS, framer-motion, lucide-react
 - Backend: Go 模块化单体（`server/cmd/server`）
 - Data: MySQL 8 + Redis 7
 - Media: local ObjectStore（预留 S3）
@@ -33,7 +34,7 @@ server/
   internal/                # auth / content / chat / ai / media / server ...
   migrations/              # embed 用 SQL
 web/
-  src/                     # Vue SPA（页面、组件、stores、i18n）
+  src/                     # React SPA（页面、组件、hooks、i18n）
 utils/                     # 无业务耦合的通用工具
 ```
 
@@ -53,7 +54,7 @@ npm run db:migrate
 # 终端 1：Go API（默认 :8080）
 cd server && go run ./cmd/server
 
-# 终端 2：Vue 开发服（默认 :5173，/api 代理到 :8080）
+# 终端 2：React 开发服（默认 :5173，/api 代理到 :8080）
 npm run dev
 ```
 
@@ -64,10 +65,10 @@ npm run dev
 ## 常用命令
 
 ```bash
-npm run dev                 # Vue 开发服务（web workspace）
+npm run dev                 # React 开发服务（web workspace）
 npm run build               # 生产构建前端
 npm run lint                # ESLint
-npm run typecheck           # Vue/TS 检查
+npm run typecheck           # TypeScript 检查
 npm run test:server         # Go 测试（需在 server/ 或设置 GO 工作目录）
 npm run db:up               # 启动本地 MySQL + Redis
 npm run db:down             # 停止基础设施
@@ -87,7 +88,7 @@ go run ./cmd/server hash <password>
 
 ## 部署
 
-推荐生产拓扑：**Vue 静态资源 + Go API，同源反代 `/api`（以及 `/uploads`）**，这样 Admin CSRF Cookie 与 Chat Owner Cookie 最简单。
+推荐生产拓扑：**React 静态资源 + Go API，同源反代 `/api`（以及 `/uploads`）**，这样 Admin CSRF Cookie 与 Chat Owner Cookie 最简单。
 
 示例 Nginx：
 

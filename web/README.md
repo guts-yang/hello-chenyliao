@@ -1,6 +1,6 @@
 # Web
 
-Vue 3 + Vite 单页应用，使用 Vue Router、Pinia、TypeScript、TDesign Vue Next 和 vue-i18n。
+React 18 + Vite 单页应用，使用 TypeScript、Tailwind CSS、framer-motion 与 lucide-react。视觉语言参考 Prisma：黑色电影感、暖奶油色、Almarai / Instrument Serif、pull-up 字词动画与滚动字符 reveal；内容仍是 gutsyang 双语个人作品集。
 
 ```bash
 npm install --prefix web

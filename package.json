@@ -2,7 +2,7 @@
   "name": "hello-gutsyang",
   "version": "0.1.0",
   "private": true,
-  "description": "gutsyang 的双语个人主页/作品集：Vue 3 前端 + Go 模块化单体 API。",
+  "description": "gutsyang 的双语个人主页/作品集：React 18 前端 + Go 模块化单体 API。",
   "workspaces": [
     "web",
     "utils"

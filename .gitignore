@@ -1,4 +1,4 @@
-# Node / Vue
+# Node / React
 node_modules/
 web/dist/
 dist/
@@ -23,7 +23,7 @@ test-results/
 .codebuddy/
 .claude/
 .workbuddy/
-
+.github/
 # Editor / OS
 .DS_Store
 Thumbs.db
@@ -44,10 +44,7 @@ tmp/
 temp/
 .data/
 .backend-data/
-.env
-.cursor/
-.github/
-node_modules/
+docs/
 .gitignore
 
 # Deployment / tools
