@@ -1,0 +1,471 @@
+{
+  "profile": {
+    "id": "main",
+    "nameZh": "廖晨扬",
+    "nameEn": "Tony Liao",
+    "handle": "gutsyang",
+    "role": {
+      "zh": "AI 算法工程师 · 全栈开发者",
+      "en": "AI Engineer · Full-stack Developer"
+    },
+    "slogan": {
+      "zh": "专注大模型机器遗忘学习与多智能体架构",
+      "en": "Focused on LLM machine unlearning & multi-agent architectures"
+    },
+    "bio": {
+      "zh": "华南理工大学计算机科学专业，研究大模型机器遗忘学习，并持续构建多智能体、量化与全栈系统。同时兼任班长、国旗护卫队宣传与企业实习，把研究与真实场景工程连接起来。",
+      "en": "CS undergrad at SCUT researching LLM unlearning while building multi-agent, quant and full-stack systems. Also a class monitor, Flag Guard propagandist and industry intern connecting research with real deployments."
+    },
+    "avatarUrl": "/avatar-placeholder.svg",
+    "socials": [
+      {
+        "type": "github",
+        "href": "https://github.com/guts-yang",
+        "label": "@guts-yang"
+      }
+    ],
+    "updatedAt": "2026-07-23T00:00:00Z"
+  },
+  "projects": [
+    {
+      "id": "project-llm-hessian-unlearning",
+      "slug": "llm-hessian-unlearning",
+      "kind": "academic",
+      "title": {
+        "zh": "基于 Hessian 矩阵的 LLM 机器遗忘学习",
+        "en": "LLM Machine Unlearning via Hessian Curvature"
+      },
+      "tagline": {
+        "zh": "让大模型「精确遗忘」指定知识，同时保住通用能力",
+        "en": "Precisely erase target knowledge from LLMs without breaking general ability"
+      },
+      "summary": {
+        "zh": "提出基于二阶曲率信息的遗忘算子，对参数局部线性近似下的影响函数做加速近似，达到数倍于现有方法的遗忘效率，同时保留下游任务表现。",
+        "en": "Proposes a second-order influence-function approximation that erases targeted samples from a fine-tuned LLM with multiple-x speedup over baselines, while retaining downstream performance."
+      },
+      "tags": ["LLM", "Unlearning", "PyTorch", "Hessian", "Influence Function"],
+      "highlights": [
+        { "zh": "相比 Gradient Ascent 基线提速 4-6 倍", "en": "4-6x faster than gradient-ascent baseline" },
+        { "zh": "在 7B / 13B 两个量级 LLM 上完成可复现实验", "en": "Reproducible experiments on 7B and 13B LLMs" },
+        { "zh": "保留下游 MMLU 平均得分回退 < 1%", "en": "Downstream MMLU regression < 1%" }
+      ],
+      "startedAt": "2025-03",
+      "displayOrder": 50,
+      "isPublished": true
+    },
+    {
+      "id": "project-langgraph-multi-agent",
+      "slug": "langgraph-multi-agent",
+      "kind": "engineering",
+      "title": {
+        "zh": "LangGraph 多智能体协同架构",
+        "en": "LangGraph Multi-Agent Orchestration"
+      },
+      "tagline": {
+        "zh": "把规划、检索、写作、评审拆成可路由的图节点",
+        "en": "Plan / retrieve / write / review as routable graph nodes"
+      },
+      "summary": {
+        "zh": "基于 LangGraph 设计可热插拔的智能体协同框架，支持任务路由、子图回滚、流式输出，已在多个真实业务场景落地。",
+        "en": "A pluggable multi-agent framework on LangGraph with task routing, subgraph rollback and streaming output, deployed in multiple real-world use cases."
+      },
+      "tags": ["LangGraph", "LangChain", "Python", "FastAPI", "Multi-Agent"],
+      "highlights": [
+        { "zh": "可热插拔的子图节点，新增能力 < 1 天", "en": "Hot-pluggable subgraph nodes; add a capability in < 1 day" },
+        { "zh": "内置评审环节，端到端事实正确率提升 23%", "en": "Built-in review loop boosts end-to-end factuality by 23%" }
+      ],
+      "startedAt": "2024-09",
+      "displayOrder": 40,
+      "isPublished": true
+    },
+    {
+      "id": "project-a-stock-quant",
+      "slug": "a-stock-quant",
+      "kind": "engineering",
+      "title": {
+        "zh": "A 股量化分析系统",
+        "en": "A-Share Quant Analysis System"
+      },
+      "tagline": {
+        "zh": "SMC + 缠论混合策略 + 深度学习信号融合",
+        "en": "SMC + Chan Theory hybrid strategy with deep-learning signal fusion"
+      },
+      "summary": {
+        "zh": "从行情拉取、特征工程、策略回测、信号告警一条龙，前端 Vue + ECharts，后端 Python + Pandas，模型层 PyTorch。",
+        "en": "End-to-end pipeline: data ingestion, feature engineering, backtesting, alerting. Vue + ECharts on the front, Python + Pandas on the back, PyTorch for models."
+      },
+      "tags": ["Vue", "Python", "Pandas", "PyTorch", "Quant"],
+      "highlights": [
+        { "zh": "近 12 个月模拟回测年化超额 18%", "en": "Simulated alpha of 18% over the last 12 months" },
+        { "zh": "引入 SMC 结构识别，假突破过滤率 +40%", "en": "SMC structure detection cuts false breakouts by 40%" }
+      ],
+      "startedAt": "2024-04",
+      "displayOrder": 30,
+      "isPublished": true
+    },
+    {
+      "id": "project-rural-multi-agent",
+      "slug": "rural-multi-agent-decision",
+      "kind": "engineering",
+      "title": {
+        "zh": "乡村多智能体决策系统",
+        "en": "Rural Multi-Agent Decision System"
+      },
+      "tagline": {
+        "zh": "1 个 Supervisor 调度 8 个子智能体的分层协同",
+        "en": "One supervisor orchestrating eight specialist agents"
+      },
+      "summary": {
+        "zh": "在广州唯实智能实习期间，基于 Hierarchical + LangGraph 构建乡村场景多智能体决策系统，覆盖规划、检索、执行与复核链路。",
+        "en": "Built during the Weishi internship using hierarchical LangGraph orchestration for rural decision workflows spanning planning, retrieval, execution and review."
+      },
+      "tags": ["LangGraph", "Multi-Agent", "Python", "Decision Systems"],
+      "highlights": [
+        { "zh": "Supervisor + 8 子智能体分层架构", "en": "Supervisor + 8 specialist agents" },
+        { "zh": "可路由、可回滚的任务图", "en": "Routable and recoverable task graphs" }
+      ],
+      "startedAt": "2025-12",
+      "endedAt": "2026-02",
+      "displayOrder": 20,
+      "isPublished": true
+    },
+    {
+      "id": "project-gridtrace-rag",
+      "slug": "gridtrace-rag-ops-agent",
+      "kind": "academic",
+      "title": {
+        "zh": "运维数字员工 GridTrace RAG",
+        "en": "GridTrace RAG Ops Agent"
+      },
+      "tagline": {
+        "zh": "两层路由的运维知识问答与工具调用",
+        "en": "Two-layer routing for ops QA and tool calling"
+      },
+      "summary": {
+        "zh": "课程设计项目：构建两层 L1/L2 路由的运维数字员工，结合 RAG 与工具调用完成故障定位辅助，课程排名 1/77。",
+        "en": "Course project building a two-layer L1/L2 routing ops agent with RAG and tool calling for incident support; ranked 1/77."
+      },
+      "tags": ["RAG", "Python", "Ops", "Agents"],
+      "highlights": [
+        { "zh": "课程排名 1/77", "en": "Ranked 1/77 in the course" },
+        { "zh": "两层路由降低噪声召回", "en": "Two-layer routing reduces noisy retrieval" }
+      ],
+      "startedAt": "2025-03",
+      "displayOrder": 10,
+      "isPublished": true
+    }
+  ],
+  "experiences": [
+    {
+      "id": "experience-tencent-platform",
+      "slug": "tencent-platform-intern",
+      "org": { "zh": "腾讯科技（深圳）· 基础平台中心", "en": "Tencent · Foundation Platform" },
+      "role": { "zh": "软件开发实习生", "en": "Software Engineering Intern" },
+      "summary": {
+        "zh": "参与七彩石配置中心与 AI Review 旁路模块建设，服务超大规模配置变更与多仓库解耦评审，并沉淀新人导师 Skill。",
+        "en": "Contributed to the Qicaishi config center and AI Review bypass module for large-scale config changes and multi-repo review decoupling, while shipping an onboarding mentor skill."
+      },
+      "metrics": [
+        { "zh": "服务亿级配置变更场景", "en": "Supported hundred-million-scale config changes" },
+        { "zh": "新人研发导师 Skill：onboarding 2 周→5 天", "en": "Mentor skill cut onboarding from 2 weeks to 5 days" }
+      ],
+      "startedAt": "2026-05",
+      "endedAt": "2026-10",
+      "displayOrder": 60,
+      "isPublished": true
+    },
+    {
+      "id": "experience-beuron-ai",
+      "slug": "beuron-ai-intern",
+      "org": { "zh": "贝朗（中国）卫浴 · AI 效率组", "en": "Beuron China · AI Efficiency Team" },
+      "role": { "zh": "AI 效率实习生", "en": "AI Efficiency Intern" },
+      "summary": {
+        "zh": "独立推进采购推单自动化与智能标书组装系统，将招标解析、组件化拼装与推单流程产品化。",
+        "en": "Independently built procurement push-order automation and intelligent bid-assembly systems that productized tender parsing and componentized document generation."
+      },
+      "metrics": [
+        { "zh": "年节省成本 100+ 万元", "en": "Saved RMB 1M+ annually" },
+        { "zh": "打通 Excel 推单到标书组装闭环", "en": "Closed the loop from Excel push-orders to bid assembly" }
+      ],
+      "startedAt": "2026-03",
+      "endedAt": "2026-05",
+      "displayOrder": 50,
+      "isPublished": true
+    },
+    {
+      "id": "experience-weishi-multi-agent",
+      "slug": "weishi-multi-agent-intern",
+      "org": { "zh": "广州唯实智能", "en": "Guangzhou Weishi Intelligence" },
+      "role": { "zh": "多智能体系统实习生", "en": "Multi-Agent Systems Intern" },
+      "summary": {
+        "zh": "设计并落地乡村多智能体决策系统，用 Supervisor 调度多个专业子智能体完成场景决策。",
+        "en": "Designed and shipped a rural multi-agent decision system where a supervisor orchestrates specialist agents."
+      },
+      "metrics": [
+        { "zh": "1 Supervisor 调度 8 子智能体", "en": "1 supervisor orchestrating 8 agents" }
+      ],
+      "startedAt": "2025-12",
+      "endedAt": "2026-02",
+      "displayOrder": 40,
+      "isPublished": true
+    },
+    {
+      "id": "experience-iflytek-spark",
+      "slug": "iflytek-spark-campus",
+      "org": { "zh": "科大讯飞 · 星火校园", "en": "iFlytek · Spark Campus" },
+      "role": { "zh": "星火校园实习生 / 校园发起人", "en": "Spark Campus Intern / Campus Lead" },
+      "summary": {
+        "zh": "负责华南理工大学星火校园招募、传播与赛队组织，超额完成招募目标，并用 A/B 测试优化渠道。",
+        "en": "Owned Spark Campus recruiting, outreach and team formation at SCUT, exceeding targets and improving channels via A/B tests."
+      },
+      "metrics": [
+        { "zh": "招募 412 / 目标 300（超额 37.3%）", "en": "Recruited 412 vs 300 target (+37.3%)" },
+        { "zh": "覆盖率提升约 300%", "en": "Coverage improved by ~300%" }
+      ],
+      "startedAt": "2025-06",
+      "endedAt": "2026-05",
+      "displayOrder": 30,
+      "isPublished": true
+    },
+    {
+      "id": "experience-scut-class-monitor",
+      "slug": "scut-class-monitor",
+      "org": { "zh": "华南理工大学计科 2 班", "en": "SCUT CS Class 2" },
+      "role": { "zh": "班长", "en": "Class Monitor" },
+      "summary": {
+        "zh": "统筹班级党团活动、学风建设与同学服务，所在班级获评五四红旗团支部与先进班集体。",
+        "en": "Led class party/youth activities, academic culture and peer support; the class earned May Fourth Red Banner and Advanced Collective honors."
+      },
+      "metrics": [
+        { "zh": "统筹 16 场党团活动", "en": "Organized 16 party/youth events" },
+        { "zh": "获评五四红旗团支部 / 先进班集体", "en": "May Fourth Red Banner / Advanced Collective" }
+      ],
+      "startedAt": "2023-09",
+      "displayOrder": 20,
+      "isPublished": true
+    },
+    {
+      "id": "experience-scut-flag-guard",
+      "slug": "scut-flag-guard-propaganda",
+      "org": { "zh": "华南理工大学国旗护卫队", "en": "SCUT Flag Guard" },
+      "role": { "zh": "宣传组组长", "en": "Propaganda Team Lead" },
+      "summary": {
+        "zh": "负责出旗仪式宣传与内容生产，持续输出推文、视频与校园传播素材。",
+        "en": "Led ceremony communication and content production spanning posts, videos and campus outreach assets."
+      },
+      "metrics": [
+        { "zh": "累计 10 篇推文 / 约 3000 阅读", "en": "10 posts / ~3000 reads" }
+      ],
+      "startedAt": "2024-06",
+      "endedAt": "2026-06",
+      "displayOrder": 10,
+      "isPublished": true
+    }
+  ],
+  "honors": [
+    {
+      "id": "honor-kaggle-silver",
+      "pillar": "wisdom",
+      "title": { "zh": "Kaggle Hull Tactical · 银奖", "en": "Kaggle Hull Tactical · Silver" },
+      "story": {
+        "zh": "2026 Kaggle Hull Tactical Market Prediction 竞赛获得银奖，把量化信号与机器学习方法放到真实竞赛压力下验证。",
+        "en": "Earned silver in the 2026 Kaggle Hull Tactical Market Prediction competition, stress-testing quant signals under real contest pressure."
+      },
+      "displayOrder": 80,
+      "isPublished": true
+    },
+    {
+      "id": "honor-career-planning",
+      "pillar": "wisdom",
+      "title": { "zh": "全国大学生职业规划大赛 · 省铜 / 校一", "en": "National Career Planning Contest · Provincial Bronze / Campus First" },
+      "story": {
+        "zh": "第三届全国大学生职业规划大赛获得广东省铜奖与校赛一等奖，系统梳理研究与工程路径。",
+        "en": "Won provincial bronze and campus first prize in the 3rd National Career Planning Contest by articulating a clear research-to-engineering path."
+      },
+      "displayOrder": 70,
+      "isPublished": true
+    },
+    {
+      "id": "honor-zhengda",
+      "pillar": "wisdom",
+      "title": { "zh": "正大杯市调大赛 · 国三 / 省一", "en": "Zhengda Cup · National Third / Provincial First" },
+      "story": {
+        "zh": "正大杯市场调查与分析大赛获得国家级三等奖与省级一等奖，完成完整调研与数据分析闭环。",
+        "en": "Won national third and provincial first prizes in the Zhengda Cup market research contest with a full research and analytics loop."
+      },
+      "displayOrder": 60,
+      "isPublished": true
+    },
+    {
+      "id": "honor-hightech",
+      "pillar": "wisdom",
+      "title": { "zh": "高新技术竞赛 · 数据分析二等奖 / 数据库一等奖", "en": "High-Tech Contest · Data Analysis Second / DB First" },
+      "story": {
+        "zh": "全国大学生高新技术竞赛中获得数据分析二等奖与数据库实操一等奖。",
+        "en": "Earned second prize in data analysis and first prize in database practice at the National High-Tech Contest."
+      },
+      "displayOrder": 50,
+      "isPublished": true
+    },
+    {
+      "id": "honor-lanqiao",
+      "pillar": "wisdom",
+      "title": { "zh": "蓝桥杯 · 省赛 / 校级奖项", "en": "Lanqiao Cup · Provincial / Campus Awards" },
+      "story": {
+        "zh": "在蓝桥杯软件与信息技术专业人才大赛中完成算法与工程能力检验，并获得省赛/校级奖项。",
+        "en": "Validated algorithm and engineering skills in the Lanqiao Cup software contest with provincial/campus awards."
+      },
+      "displayOrder": 45,
+      "isPublished": true
+    },
+    {
+      "id": "honor-morality",
+      "pillar": "morality",
+      "title": { "zh": "领导力 · 十大学生党团标兵", "en": "Leadership · Top Student Party/Youth Model" },
+      "story": {
+        "zh": "以班长与国护宣传组工作统筹同学服务与红色教育传播，获评十大学生党团标兵。",
+        "en": "Recognized as a Top Student Party/Youth Model for class leadership and Flag Guard communication work."
+      },
+      "displayOrder": 40,
+      "isPublished": true
+    },
+    {
+      "id": "honor-athletics",
+      "pillar": "athletics",
+      "title": { "zh": "抗压力 · 长征研学与集训", "en": "Resilience · Long-March Field Study" },
+      "story": {
+        "zh": "参与长征历史研学与高强度集训，在徒步与团队协作中磨砺意志。",
+        "en": "Joined Long-March field study and intensive training that built grit through hiking and teamwork."
+      },
+      "displayOrder": 20,
+      "isPublished": true
+    },
+    {
+      "id": "honor-labor",
+      "pillar": "labor",
+      "title": { "zh": "奉献 · 百小时辅导与社会实践", "en": "Contribution · 100+ Tutoring Hours & Social Practice" },
+      "story": {
+        "zh": "累计 100+ 小时一对一辅导，并连续两年获评社会实践先进个人。",
+        "en": "Delivered 100+ tutoring hours and earned Advanced Social Practice Individual honors for two consecutive years."
+      },
+      "displayOrder": 10,
+      "isPublished": true
+    }
+  ],
+  "education": [
+    {
+      "id": "education-scut",
+      "school": { "zh": "华南理工大学", "en": "South China University of Technology" },
+      "degree": { "zh": "计算机科学与技术 · 本科", "en": "B.Eng. in Computer Science" },
+      "notes": {
+        "zh": "2023 级计科 2 班班长；主修人工智能与系统软件；班级获评五四红旗团支部与先进班集体。",
+        "en": "Class monitor of CS Class 2 (2023 cohort); focus on AI and systems software; class earned May Fourth Red Banner and Advanced Collective honors."
+      },
+      "startedAt": "2023-09",
+      "endedAt": "2027-07",
+      "displayOrder": 10
+    }
+  ],
+  "timeline": [
+    {
+      "id": "timeline-2023-09",
+      "date": "2023-09",
+      "kind": "edu",
+      "title": { "zh": "入学 · 华南理工大学 CS / 班长", "en": "Enrolled · SCUT CS / Class Monitor" },
+      "body": {
+        "zh": "开始系统训练算法、系统、AI 三条主线，并担任计科 2 班班长。",
+        "en": "Started a structured journey across algorithms, systems and AI while serving as class monitor."
+      }
+    },
+    {
+      "id": "timeline-2024-04",
+      "date": "2024-04",
+      "kind": "project",
+      "title": { "zh": "启动 · A 股量化分析系统", "en": "Kickoff · A-Share Quant System" },
+      "body": {
+        "zh": "将 SMC 与缠论与深度学习融合。",
+        "en": "Fused SMC and Chan theory with deep learning."
+      }
+    },
+    {
+      "id": "timeline-2024-06",
+      "date": "2024-06",
+      "kind": "work",
+      "title": { "zh": "加入国旗护卫队宣传组", "en": "Joined Flag Guard Propaganda Team" },
+      "body": {
+        "zh": "负责出旗仪式与校园传播内容生产。",
+        "en": "Owned ceremony communications and campus content production."
+      }
+    },
+    {
+      "id": "timeline-2024-09",
+      "date": "2024-09",
+      "kind": "project",
+      "title": { "zh": "启动 · LangGraph 多智能体", "en": "Kickoff · LangGraph Multi-Agent" },
+      "body": {
+        "zh": "搭建可热插拔的智能体协同框架。",
+        "en": "Built a hot-pluggable multi-agent framework."
+      }
+    },
+    {
+      "id": "timeline-2025-03",
+      "date": "2025-03",
+      "kind": "project",
+      "title": { "zh": "启动 · LLM 机器遗忘学习", "en": "Kickoff · LLM Machine Unlearning" },
+      "body": {
+        "zh": "基于 Hessian 曲率的二阶遗忘算子。",
+        "en": "Second-order unlearning operator using Hessian curvature."
+      }
+    },
+    {
+      "id": "timeline-2025-06",
+      "date": "2025-06",
+      "kind": "work",
+      "title": { "zh": "科大讯飞星火校园实习", "en": "iFlytek Spark Campus Internship" },
+      "body": {
+        "zh": "超额完成招募目标，优化传播渠道。",
+        "en": "Exceeded recruiting targets and improved outreach channels."
+      }
+    },
+    {
+      "id": "timeline-2025-12",
+      "date": "2025-12",
+      "kind": "work",
+      "title": { "zh": "唯实智能 · 乡村多智能体", "en": "Weishi · Rural Multi-Agent" },
+      "body": {
+        "zh": "落地 Supervisor 调度多个专业子智能体。",
+        "en": "Shipped a supervisor orchestrating specialist agents."
+      }
+    },
+    {
+      "id": "timeline-2026-03",
+      "date": "2026-03",
+      "kind": "work",
+      "title": { "zh": "贝朗 AI 效率组实习", "en": "Beuron AI Efficiency Internship" },
+      "body": {
+        "zh": "采购推单与智能标书系统年省 100+ 万。",
+        "en": "Procurement and bid-assembly systems saved RMB 1M+ yearly."
+      }
+    },
+    {
+      "id": "timeline-2026-05",
+      "date": "2026-05",
+      "kind": "work",
+      "title": { "zh": "腾讯基础平台实习", "en": "Tencent Foundation Platform Internship" },
+      "body": {
+        "zh": "参与七彩石配置中心与 AI Review 旁路建设。",
+        "en": "Contributed to Qicaishi config center and AI Review bypass."
+      }
+    },
+    {
+      "id": "timeline-2026-kaggle",
+      "date": "2026-02",
+      "kind": "honor",
+      "title": { "zh": "Kaggle Hull Tactical 银奖", "en": "Kaggle Hull Tactical Silver" },
+      "body": {
+        "zh": "在真实竞赛中验证量化与机器学习方法。",
+        "en": "Validated quant and ML methods under contest pressure."
+      }
+    }
+  ]
+}

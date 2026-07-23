@@ -1,0 +1,60 @@
+# Non-secret defaults for the Go API. Environment variables override these.
+# See config/env.example for secrets and overrides.
+
+server:
+  addr: ":8080"
+  public_base_url: "http://localhost:8080"
+  app_origin: "http://localhost:5173"
+  allowed_origins:
+    - "http://localhost:5173"
+    - "http://localhost:3000"
+    - "http://127.0.0.1:5173"
+    - "http://127.0.0.1:3000"
+
+database:
+  # Empty = no MySQL; auth/chat/cms fall back to memory / embedded seed.
+  dsn: "hello:hello@tcp(127.0.0.1:3306)/hello_gutsyang?parseTime=true&loc=UTC&charset=utf8mb4"
+
+redis:
+  # Empty addr disables Redis; rate limit + cache use in-memory fallbacks.
+  addr: "127.0.0.1:6379"
+  password: ""
+  db: 0
+
+media:
+  provider: "local" # local | s3 (s3 reserved)
+  local_dir: "./uploads"
+  max_upload_bytes: 10485760
+  # s3:
+  #   bucket: ""
+  #   region: ""
+  #   endpoint: ""
+
+ai:
+  base_url: "https://api.deepseek.com"
+  model: "deepseek-v4-flash"
+  # api_key comes from DEEPSEEK_API_KEY env only
+
+rate_limit:
+  login:
+    burst: 10
+    window: "5m"
+  chat:
+    burst: 5
+    window: "30s"
+  ai_list:
+    burst: 60
+    window: "1m"
+  admin_ai:
+    burst: 30
+    window: "1m"
+
+login_lockout:
+  threshold: 5
+  window: "15m"
+  block_for: "15m"
+
+cookies:
+  session: "hello_gutsyang_admin_session"
+  chat_owner: "hello_gutsyang_chat_owner"
+  secure: "auto" # auto | on | off
