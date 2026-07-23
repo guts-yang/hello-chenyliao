@@ -478,6 +478,164 @@ func (s *Server) handleAdminDeleteHonor(w http.ResponseWriter, r *http.Request) 
 	httpx.WriteJSON(w, http.StatusOK, map[string]any{"ok": true})
 }
 
+func (s *Server) handleAdminListEducation(w http.ResponseWriter, r *http.Request) {
+	items, err := s.content.Education(r.Context())
+	if err != nil {
+		httpx.WriteServerError(w, r, err)
+		return
+	}
+	httpx.WriteJSON(w, http.StatusOK, items)
+}
+
+func (s *Server) handleAdminGetEducation(w http.ResponseWriter, r *http.Request) {
+	e, err := s.content.EducationByID(r.Context(), chi.URLParam(r, "id"))
+	if err != nil {
+		writeContentErr(w, err)
+		return
+	}
+	httpx.WriteJSON(w, http.StatusOK, e)
+}
+
+func (s *Server) handleAdminCreateEducation(w http.ResponseWriter, r *http.Request) {
+	ac := adminFrom(r.Context())
+	var body model.Education
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		httpx.WriteClientError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	e, err := s.content.UpsertEducation(r.Context(), body)
+	if err != nil {
+		httpx.WriteServerError(w, r, err)
+		return
+	}
+	s.invalidatePublicCache()
+	s.audit.Record(r.Context(), audit.Entry{Action: "education.create", UserID: &ac.User.ID, Target: e.ID})
+	httpx.WriteJSON(w, http.StatusOK, e)
+}
+
+func (s *Server) handleAdminUpdateEducation(w http.ResponseWriter, r *http.Request) {
+	ac := adminFrom(r.Context())
+	var body model.Education
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		httpx.WriteClientError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	body.ID = chi.URLParam(r, "id")
+	e, err := s.content.UpsertEducation(r.Context(), body)
+	if err != nil {
+		httpx.WriteServerError(w, r, err)
+		return
+	}
+	s.invalidatePublicCache()
+	s.audit.Record(r.Context(), audit.Entry{Action: "education.update", UserID: &ac.User.ID, Target: e.ID})
+	httpx.WriteJSON(w, http.StatusOK, e)
+}
+
+func (s *Server) handleAdminDeleteEducation(w http.ResponseWriter, r *http.Request) {
+	ac := adminFrom(r.Context())
+	id := chi.URLParam(r, "id")
+	if err := s.content.DeleteEducation(r.Context(), id); err != nil {
+		writeContentErr(w, err)
+		return
+	}
+	s.invalidatePublicCache()
+	s.audit.Record(r.Context(), audit.Entry{Action: "education.delete", UserID: &ac.User.ID, Target: id})
+	httpx.WriteJSON(w, http.StatusOK, map[string]any{"ok": true})
+}
+
+func (s *Server) handleAdminListTimeline(w http.ResponseWriter, r *http.Request) {
+	items, err := s.content.Timeline(r.Context())
+	if err != nil {
+		httpx.WriteServerError(w, r, err)
+		return
+	}
+	httpx.WriteJSON(w, http.StatusOK, items)
+}
+
+func (s *Server) handleAdminGetTimeline(w http.ResponseWriter, r *http.Request) {
+	item, err := s.content.TimelineByID(r.Context(), chi.URLParam(r, "id"))
+	if err != nil {
+		writeContentErr(w, err)
+		return
+	}
+	httpx.WriteJSON(w, http.StatusOK, item)
+}
+
+func (s *Server) handleAdminCreateTimeline(w http.ResponseWriter, r *http.Request) {
+	ac := adminFrom(r.Context())
+	var body model.TimelineEvent
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		httpx.WriteClientError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	item, err := s.content.UpsertTimeline(r.Context(), body)
+	if err != nil {
+		httpx.WriteServerError(w, r, err)
+		return
+	}
+	s.invalidatePublicCache()
+	s.audit.Record(r.Context(), audit.Entry{Action: "timeline.create", UserID: &ac.User.ID, Target: item.ID})
+	httpx.WriteJSON(w, http.StatusOK, item)
+}
+
+func (s *Server) handleAdminUpdateTimeline(w http.ResponseWriter, r *http.Request) {
+	ac := adminFrom(r.Context())
+	var body model.TimelineEvent
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		httpx.WriteClientError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	body.ID = chi.URLParam(r, "id")
+	item, err := s.content.UpsertTimeline(r.Context(), body)
+	if err != nil {
+		httpx.WriteServerError(w, r, err)
+		return
+	}
+	s.invalidatePublicCache()
+	s.audit.Record(r.Context(), audit.Entry{Action: "timeline.update", UserID: &ac.User.ID, Target: item.ID})
+	httpx.WriteJSON(w, http.StatusOK, item)
+}
+
+func (s *Server) handleAdminDeleteTimeline(w http.ResponseWriter, r *http.Request) {
+	ac := adminFrom(r.Context())
+	id := chi.URLParam(r, "id")
+	if err := s.content.DeleteTimeline(r.Context(), id); err != nil {
+		writeContentErr(w, err)
+		return
+	}
+	s.invalidatePublicCache()
+	s.audit.Record(r.Context(), audit.Entry{Action: "timeline.delete", UserID: &ac.User.ID, Target: id})
+	httpx.WriteJSON(w, http.StatusOK, map[string]any{"ok": true})
+}
+
+func (s *Server) handleAdminGetResume(w http.ResponseWriter, r *http.Request) {
+	resume, err := s.content.Resume(r.Context())
+	if err != nil {
+		httpx.WriteServerError(w, r, err)
+		return
+	}
+	httpx.WriteJSON(w, http.StatusOK, resume)
+}
+
+func (s *Server) handleAdminPutResume(w http.ResponseWriter, r *http.Request) {
+	ac := adminFrom(r.Context())
+	var body struct {
+		URL string `json:"url"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		httpx.WriteClientError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	resume, err := s.content.SetResumeURL(r.Context(), body.URL)
+	if err != nil {
+		httpx.WriteServerError(w, r, err)
+		return
+	}
+	s.invalidatePublicCache()
+	s.audit.Record(r.Context(), audit.Entry{Action: "resume.update", UserID: &ac.User.ID, Target: body.URL})
+	httpx.WriteJSON(w, http.StatusOK, resume)
+}
+
 func (s *Server) handleTranslate(w http.ResponseWriter, r *http.Request) {
 	if !s.loginLimiterAllow(w, s.adminAILimit, "admin-ai:"+httpx.ClientIP(r), s.cfg.RateLimitAdminAI.Window) {
 		return

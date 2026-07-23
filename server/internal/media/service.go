@@ -20,11 +20,12 @@ import (
 // Kept as a package-level var so tests / callers can override if they want a
 // stricter or looser policy without changing the service contract.
 var AllowedMimeTypes = map[string]struct{}{
-	"image/png":     {},
-	"image/jpeg":    {},
-	"image/webp":    {},
-	"image/gif":     {},
-	"image/svg+xml": {},
+	"image/png":         {},
+	"image/jpeg":        {},
+	"image/webp":        {},
+	"image/gif":         {},
+	"image/svg+xml":     {},
+	"application/pdf":   {},
 }
 
 // IsAllowedMimeType reports whether the provided Content-Type (which may include

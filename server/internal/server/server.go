@@ -222,6 +222,11 @@ func (s *Server) Handler() http.Handler {
 		r.Get("/api/admin/experiences/{id}", s.handleAdminGetExperience)
 		r.Get("/api/admin/honors", s.handleAdminListHonors)
 		r.Get("/api/admin/honors/{id}", s.handleAdminGetHonor)
+		r.Get("/api/admin/education", s.handleAdminListEducation)
+		r.Get("/api/admin/education/{id}", s.handleAdminGetEducation)
+		r.Get("/api/admin/timeline", s.handleAdminListTimeline)
+		r.Get("/api/admin/timeline/{id}", s.handleAdminGetTimeline)
+		r.Get("/api/admin/resume", s.handleAdminGetResume)
 	})
 
 	r.Group(func(r chi.Router) {
@@ -240,6 +245,13 @@ func (s *Server) Handler() http.Handler {
 		r.Post("/api/admin/honors", s.handleAdminCreateHonor)
 		r.Put("/api/admin/honors/{id}", s.handleAdminUpdateHonor)
 		r.Delete("/api/admin/honors/{id}", s.handleAdminDeleteHonor)
+		r.Post("/api/admin/education", s.handleAdminCreateEducation)
+		r.Put("/api/admin/education/{id}", s.handleAdminUpdateEducation)
+		r.Delete("/api/admin/education/{id}", s.handleAdminDeleteEducation)
+		r.Post("/api/admin/timeline", s.handleAdminCreateTimeline)
+		r.Put("/api/admin/timeline/{id}", s.handleAdminUpdateTimeline)
+		r.Delete("/api/admin/timeline/{id}", s.handleAdminDeleteTimeline)
+		r.Put("/api/admin/resume", s.handleAdminPutResume)
 		r.Post("/api/admin/ai/translate", s.handleTranslate)
 		r.Post("/api/admin/media/upload-url", s.handleUploadURL)
 		r.Options("/api/admin/media/upload", s.handleUploadOptions)
@@ -306,7 +318,16 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleResume(w http.ResponseWriter, r *http.Request) {
-	httpx.WriteClientError(w, http.StatusNotFound, "resume not available")
+	resume, err := s.content.Resume(r.Context())
+	if err != nil {
+		httpx.WriteServerError(w, r, err)
+		return
+	}
+	if !resume.Available {
+		httpx.WriteClientError(w, http.StatusNotFound, "resume not available")
+		return
+	}
+	http.Redirect(w, r, resume.URL, http.StatusFound)
 }
 
 func (s *Server) cachedJSON(w http.ResponseWriter, r *http.Request, key string, ttl time.Duration, load func() (any, error)) {

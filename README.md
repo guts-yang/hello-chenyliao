@@ -10,7 +10,8 @@
 - Prisma 暖奶油色视觉系统：黑色电影感背景、Almarai / Instrument Serif、pull-up 与滚动字符动画。
 - 项目 / 经历详情页：支持双语内容、目录、前后导航；SPA 动态更新 document title/meta（社交抓虫见下方说明）。
 - AI 助手：访客可用自然语言询问 profile、projects、experiences 和 resume；会话持久化到 MySQL（无 DB 时内存回退）。
-- Admin REST API：登录、CSRF、CMS CRUD、审计、翻译、媒体上传（暂无 Admin UI）。
+- 完整 `/admin` 管理后台：登录、Dashboard、Profile / Projects / Experiences / Honors / Education / Timeline、简历 PDF、媒体上传、账户与会话、审计日志；写操作使用 Session Cookie + `X-CSRF-Token`。
+- 公开联系方式仅保留 GitHub；简历通过 `/api/resume.pdf` 重定向到后台配置的资源。
 - 国际化：`/zh` 与 `/en` 双语路由。
 
 ## 技术栈
@@ -58,7 +59,18 @@ cd server && go run ./cmd/server
 npm run dev
 ```
 
-打开 <http://localhost:5173>，会跳转到带 locale 的首页。
+打开 <http://localhost:5173>，会跳转到带 locale 的首页。管理后台：<http://localhost:5173/admin/login>。
+
+### 首次管理员登录
+
+1. 在 `.env` 设置一次性 bootstrap（或仅本地内存模式用测试配置）：
+   - `ADMIN_BOOTSTRAP_EMAIL`
+   - `ADMIN_BOOTSTRAP_PASSWORD`（或 `ADMIN_BOOTSTRAP_PASSWORD_HASH`）
+2. 启动 API 后访问 `/admin/login`，用上述账号登录。
+3. 登录成功后立刻在「设置」修改邮箱/密码，并清空 bootstrap 环境变量。
+4. 生产环境务必同源反代 `/api`（与前端同域），以便 Session Cookie 与 CSRF Cookie 生效；写请求需带 `X-CSRF-Token`（前端会从 `*_csrf` cookie 自动注入）。
+5. 简历：在后台「简历」页上传 PDF（走 upload-url → token PUT），保存后公开站「简历」按钮访问 `/api/resume.pdf`；未配置时返回 404。
+6. 媒体文件默认落在 `MEDIA_LOCAL_DIR`（如 `./uploads`），网关需把 `/uploads` 反代到 API。
 
 不配置 `DEEPSEEK_API_KEY` 时，AI 走本地演示模式。不配置 `DATABASE_URL` / MySQL 不可达时，会话与鉴权使用内存回退（重启丢失）。不配置 Redis 时，限流与缓存走进程内实现。
 
@@ -122,4 +134,4 @@ location / {
 ## 学 rainbow / 故意没学
 
 - **学了**：单一 `cmd/server`、领域分包、配置外置、前后端分离、MySQL+Redis+对象存储端口。
-- **没学**：tRPC、北极星、Kafka、多微服务、七彩石配置中心产品能力、完整 Admin UI。
+- **没学**：tRPC、北极星、Kafka、多微服务、七彩石配置中心产品能力。

@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode, type RefObject } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { motion, useInView } from 'framer-motion';
 import {
   Archive,
@@ -88,10 +88,31 @@ export function HomeView({
   const copy = t(locale);
   const data = content.data;
   const { load } = content;
+  const [timelineExpanded, setTimelineExpanded] = useState(false);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  const featuredExperiences = useMemo(() => {
+    if (!data) return [];
+    return [...data.experiences]
+      .sort((a, b) => (b.displayOrder ?? 0) - (a.displayOrder ?? 0))
+      .slice(0, 4);
+  }, [data]);
+
+  const featuredHonors = useMemo(() => {
+    if (!data) return [];
+    return [...data.honors]
+      .sort((a, b) => (b.displayOrder ?? 0) - (a.displayOrder ?? 0))
+      .slice(0, 6);
+  }, [data]);
+
+  const featuredTimeline = useMemo(() => {
+    if (!data) return [];
+    const sorted = [...data.timeline].sort((a, b) => b.date.localeCompare(a.date));
+    return timelineExpanded ? sorted : sorted.slice(0, 6);
+  }, [data, timelineExpanded]);
 
   if (content.loading && !data) {
     return (
@@ -110,6 +131,9 @@ export function HomeView({
   const brand = data.profile.handle || 'gutsyang';
   const tags = Array.from(new Set(data.projects.flatMap((project) => project.tags))).slice(0, 8);
   const activeProject = data.projects[0];
+  const researchProjects = [...data.projects]
+    .sort((a, b) => (b.displayOrder ?? 0) - (a.displayOrder ?? 0))
+    .slice(0, 4);
 
   const aboutLead =
     locale === 'zh' ? `我是${name}，` : `I am ${name.split(' ')[0] || name},`;
@@ -469,7 +493,7 @@ export function HomeView({
         <SectionEyebrow label="01" tag={copy.home.projects} />
         <h2 className="mt-5 text-3xl font-normal tracking-tight text-[#E1E0CC] md:text-5xl">{copy.home.projects}</h2>
         <div className="mt-10 grid gap-3 md:grid-cols-2">
-          {data.projects.map((project, index) => (
+          {researchProjects.map((project, index) => (
             <motion.button
               key={project.slug}
               type="button"
@@ -512,7 +536,7 @@ export function HomeView({
             <SectionEyebrow label="02" tag={copy.home.experience} />
             <h2 className="mt-5 text-3xl font-normal tracking-tight text-[#E1E0CC] md:text-4xl">{copy.home.experience}</h2>
             <div className="mt-8 space-y-3">
-              {data.experiences.map((item) => (
+              {featuredExperiences.map((item) => (
                 <button
                   key={item.slug}
                   type="button"
@@ -522,9 +546,9 @@ export function HomeView({
                   <div className="text-xs text-gray-500">{item.startedAt}</div>
                   <h3 className="mt-3 text-xl font-normal text-[#E1E0CC]">{localized(item.org, locale)}</h3>
                   <div className="mt-1 text-sm text-primary/80">{localized(item.role, locale)}</div>
-                  <p className="mt-3 text-sm text-gray-400">{localized(item.summary, locale)}</p>
+                  <p className="mt-3 line-clamp-3 text-sm text-gray-400">{localized(item.summary, locale)}</p>
                   <div className="mt-4 flex flex-wrap gap-2">
-                    {item.metrics.map((metric) => (
+                    {item.metrics.slice(0, 2).map((metric) => (
                       <span key={localized(metric, locale)} className="rounded-lg bg-black/40 px-3 py-2 text-xs text-primary/80">
                         {localized(metric, locale)}
                       </span>
@@ -532,6 +556,13 @@ export function HomeView({
                   </div>
                 </button>
               ))}
+              {data.experiences.length > featuredExperiences.length ? (
+                <p className="pt-2 text-xs text-gray-500">
+                  {locale === 'zh'
+                    ? `首页精选 ${featuredExperiences.length} 段经历 · 详情页可查看完整信息`
+                    : `Showing ${featuredExperiences.length} featured roles · open a card for details`}
+                </p>
+              ) : null}
             </div>
           </div>
           <div>
@@ -558,9 +589,9 @@ export function HomeView({
         <SectionEyebrow label="04" tag={copy.home.honors} />
         <h2 className="mt-5 text-3xl font-normal tracking-tight text-[#E1E0CC] md:text-5xl">{copy.home.honors}</h2>
         <div className="mt-10 grid gap-3 md:grid-cols-3">
-          {data.honors.map((honor) => (
+          {featuredHonors.map((honor) => (
             <figure key={honor.id || honor.pillar} className="rounded-2xl bg-[#212121] p-6">
-              <blockquote className="text-sm leading-[1.6] text-primary/80">
+              <blockquote className="line-clamp-4 text-sm leading-[1.6] text-primary/80">
                 “{localized(honor.story, locale)}”
               </blockquote>
               <figcaption className="mt-6 border-t border-primary/10 pt-5">
@@ -580,7 +611,7 @@ export function HomeView({
         <div className="relative mt-10 max-w-3xl">
           <div className="absolute bottom-3 left-[7.75rem] top-3 hidden w-px bg-primary/10 sm:block" />
           <div className="space-y-6">
-            {data.timeline.map((event) => (
+            {featuredTimeline.map((event) => (
               <article
                 key={event.id || `${event.date}-${event.kind}`}
                 className="grid grid-cols-[88px_24px_1fr] gap-3 sm:grid-cols-[100px_48px_1fr]"
@@ -597,6 +628,21 @@ export function HomeView({
               </article>
             ))}
           </div>
+          {data.timeline.length > 6 ? (
+            <button
+              type="button"
+              onClick={() => setTimelineExpanded((value) => !value)}
+              className="mt-8 rounded-full border border-primary/20 px-4 py-2 text-sm text-primary/80 transition hover:bg-primary/10"
+            >
+              {timelineExpanded
+                ? locale === 'zh'
+                  ? '收起时间线'
+                  : 'Collapse timeline'
+                : locale === 'zh'
+                  ? `展开全部 ${data.timeline.length} 条`
+                  : `Show all ${data.timeline.length} events`}
+            </button>
+          ) : null}
         </div>
       </section>
 

@@ -2,6 +2,7 @@ export type Locale = 'zh' | 'en';
 export type Localized = Record<Locale, string>;
 
 export interface Profile {
+  id?: string;
   nameZh: string;
   nameEn: string;
   handle: string;
@@ -10,6 +11,7 @@ export interface Profile {
   bio: Localized;
   avatarUrl?: string;
   socials?: Array<{ type: string; href: string; label?: string }>;
+  updatedAt?: string;
 }
 
 export interface Project {
@@ -25,6 +27,9 @@ export interface Project {
   endedAt?: string;
   link?: string;
   repo?: string;
+  coverUrl?: string;
+  displayOrder?: number;
+  isPublished?: boolean;
 }
 
 export interface Experience {
@@ -37,6 +42,8 @@ export interface Experience {
   startedAt: string;
   endedAt?: string;
   link?: string;
+  displayOrder?: number;
+  isPublished?: boolean;
 }
 
 export interface Honor {
@@ -44,6 +51,8 @@ export interface Honor {
   pillar: string;
   title: Localized;
   story: Localized;
+  displayOrder?: number;
+  isPublished?: boolean;
 }
 
 export interface Education {
@@ -53,6 +62,7 @@ export interface Education {
   notes?: Localized;
   startedAt: string;
   endedAt?: string;
+  displayOrder?: number;
 }
 
 export interface TimelineEvent {
@@ -86,4 +96,44 @@ export interface ChatSession {
   locale: Locale;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface AdminUser {
+  email: string;
+  role: string;
+}
+
+export interface AdminSessionItem {
+  id: string;
+  ip?: string;
+  userAgent?: string;
+  createdAt: string;
+  lastSeenAt: string;
+  expiresAt: string;
+  current: boolean;
+}
+
+export interface AdminAuditItem {
+  id: string;
+  action: string;
+  target?: string;
+  ip?: string;
+  userAgent?: string;
+  meta?: Record<string, unknown>;
+  createdAt: string;
+}
+
+export interface AdminStats {
+  projects: number;
+  experiences: number;
+  honors: number;
+  education?: number;
+  timeline?: number;
+  resume?: number;
+}
+
+export interface ResumeSettings {
+  url: string;
+  available: boolean;
+  updatedAt?: string;
 }

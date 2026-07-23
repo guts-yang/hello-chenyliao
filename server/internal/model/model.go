@@ -192,3 +192,9 @@ type MediaUploadResponse struct {
 	PublicURL string `json:"publicUrl"`
 	Pathname  string `json:"pathname,omitempty"`
 }
+
+type ResumeSettings struct {
+	URL       string    `json:"url"`
+	UpdatedAt time.Time `json:"updatedAt,omitempty"`
+	Available bool      `json:"available"`
+}

@@ -48,7 +48,17 @@ type Repo interface {
 	DeleteHonor(ctx context.Context, id string) error
 
 	Education(ctx context.Context) ([]model.Education, error)
+	EducationByID(ctx context.Context, id string) (*model.Education, error)
+	UpsertEducation(ctx context.Context, e model.Education) (model.Education, error)
+	DeleteEducation(ctx context.Context, id string) error
+
 	Timeline(ctx context.Context) ([]model.TimelineEvent, error)
+	TimelineByID(ctx context.Context, id string) (*model.TimelineEvent, error)
+	UpsertTimeline(ctx context.Context, t model.TimelineEvent) (model.TimelineEvent, error)
+	DeleteTimeline(ctx context.Context, id string) error
+
+	GetSetting(ctx context.Context, key string) (string, error)
+	SetSetting(ctx context.Context, key, value string) error
 }
 
 type Service struct{ repo Repo }
@@ -61,14 +71,16 @@ func NewService(db *sql.DB) (*Service, error) {
 		if err != nil {
 			return nil, err
 		}
+		snap, err := LoadEmbeddedSeed()
+		if err != nil {
+			return nil, err
+		}
 		if empty {
-			snap, err := LoadEmbeddedSeed()
-			if err != nil {
-				return nil, err
-			}
 			if err := repo.ImportSnapshot(context.Background(), snap); err != nil {
 				return nil, err
 			}
+		} else if err := mergeSeed(context.Background(), repo, snap); err != nil {
+			return nil, err
 		}
 	} else {
 		snap, err := LoadEmbeddedSeed()
@@ -82,6 +94,59 @@ func NewService(db *sql.DB) (*Service, error) {
 		repo = m
 	}
 	return &Service{repo: repo}, nil
+}
+
+// mergeSeed upserts seed entities by ID so existing databases pick up new
+// research-plus-docs content without wiping admin customizations outside seed IDs.
+func mergeSeed(ctx context.Context, repo Repo, snap model.ContentSnapshot) error {
+	profile, err := repo.Profile(ctx)
+	if err == nil {
+		profile.NameEN = snap.Profile.NameEN
+		if len(profile.Socials) == 0 {
+			profile.Socials = snap.Profile.Socials
+		} else {
+			// Keep only GitHub on public profile by default when merging.
+			filtered := make([]model.SocialLink, 0, len(profile.Socials))
+			for _, s := range profile.Socials {
+				if strings.EqualFold(s.Type, "github") {
+					filtered = append(filtered, s)
+				}
+			}
+			if len(filtered) == 0 {
+				filtered = snap.Profile.Socials
+			}
+			profile.Socials = filtered
+		}
+		if _, err := repo.UpdateProfile(ctx, profile); err != nil {
+			return err
+		}
+	}
+	for _, p := range snap.Projects {
+		if _, err := repo.UpsertProject(ctx, p); err != nil {
+			return err
+		}
+	}
+	for _, e := range snap.Experiences {
+		if _, err := repo.UpsertExperience(ctx, e); err != nil {
+			return err
+		}
+	}
+	for _, h := range snap.Honors {
+		if _, err := repo.UpsertHonor(ctx, h); err != nil {
+			return err
+		}
+	}
+	for _, e := range snap.Education {
+		if _, err := repo.UpsertEducation(ctx, e); err != nil {
+			return err
+		}
+	}
+	for _, t := range snap.Timeline {
+		if _, err := repo.UpsertTimeline(ctx, t); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func NewMemoryService() (*Service, error) {
@@ -212,8 +277,50 @@ func (s *Service) DeleteHonor(ctx context.Context, id string) error {
 func (s *Service) Education(ctx context.Context) ([]model.Education, error) {
 	return s.repo.Education(ctx)
 }
+func (s *Service) EducationByID(ctx context.Context, id string) (*model.Education, error) {
+	return s.repo.EducationByID(ctx, id)
+}
+func (s *Service) UpsertEducation(ctx context.Context, e model.Education) (model.Education, error) {
+	if e.ID == "" {
+		e.ID = uuid.New().String()
+	}
+	return s.repo.UpsertEducation(ctx, e)
+}
+func (s *Service) DeleteEducation(ctx context.Context, id string) error {
+	return s.repo.DeleteEducation(ctx, id)
+}
 func (s *Service) Timeline(ctx context.Context) ([]model.TimelineEvent, error) {
 	return s.repo.Timeline(ctx)
+}
+func (s *Service) TimelineByID(ctx context.Context, id string) (*model.TimelineEvent, error) {
+	return s.repo.TimelineByID(ctx, id)
+}
+func (s *Service) UpsertTimeline(ctx context.Context, t model.TimelineEvent) (model.TimelineEvent, error) {
+	if t.ID == "" {
+		t.ID = uuid.New().String()
+	}
+	return s.repo.UpsertTimeline(ctx, t)
+}
+func (s *Service) DeleteTimeline(ctx context.Context, id string) error {
+	return s.repo.DeleteTimeline(ctx, id)
+}
+
+const SettingResumeURL = "resume_url"
+
+func (s *Service) Resume(ctx context.Context) (model.ResumeSettings, error) {
+	url, err := s.repo.GetSetting(ctx, SettingResumeURL)
+	if err != nil && !errors.Is(err, ErrNotFound) {
+		return model.ResumeSettings{}, err
+	}
+	return model.ResumeSettings{URL: url, Available: strings.TrimSpace(url) != ""}, nil
+}
+
+func (s *Service) SetResumeURL(ctx context.Context, url string) (model.ResumeSettings, error) {
+	url = strings.TrimSpace(url)
+	if err := s.repo.SetSetting(ctx, SettingResumeURL, url); err != nil {
+		return model.ResumeSettings{}, err
+	}
+	return model.ResumeSettings{URL: url, Available: url != "", UpdatedAt: time.Now().UTC()}, nil
 }
 
 func (s *Service) Stats(ctx context.Context) (map[string]int, error) {
@@ -229,10 +336,29 @@ func (s *Service) Stats(ctx context.Context) (map[string]int, error) {
 	if err != nil {
 		return nil, err
 	}
+	education, err := s.Education(ctx)
+	if err != nil {
+		return nil, err
+	}
+	timeline, err := s.Timeline(ctx)
+	if err != nil {
+		return nil, err
+	}
+	resume, err := s.Resume(ctx)
+	if err != nil {
+		return nil, err
+	}
+	resumeCount := 0
+	if resume.Available {
+		resumeCount = 1
+	}
 	return map[string]int{
 		"projects":    len(projects),
 		"experiences": len(experiences),
 		"honors":      len(honors),
+		"education":   len(education),
+		"timeline":    len(timeline),
+		"resume":      resumeCount,
 	}, nil
 }
 
@@ -267,18 +393,22 @@ func (s *Service) SearchProjects(ctx context.Context, query string, limit int) (
 // --- memory repo ---
 
 type memoryRepo struct {
-	mu   sync.RWMutex
-	snap model.ContentSnapshot
+	mu       sync.RWMutex
+	snap     model.ContentSnapshot
+	settings map[string]string
 }
 
 func newMemoryRepo() *memoryRepo {
-	return &memoryRepo{snap: model.ContentSnapshot{
-		Projects:    []model.Project{},
-		Experiences: []model.Experience{},
-		Honors:      []model.Honor{},
-		Education:   []model.Education{},
-		Timeline:    []model.TimelineEvent{},
-	}}
+	return &memoryRepo{
+		snap: model.ContentSnapshot{
+			Projects:    []model.Project{},
+			Experiences: []model.Experience{},
+			Honors:      []model.Honor{},
+			Education:   []model.Education{},
+			Timeline:    []model.TimelineEvent{},
+		},
+		settings: map[string]string{},
+	}
 }
 
 func (r *memoryRepo) IsEmpty(_ context.Context) (bool, error) {
@@ -496,10 +626,107 @@ func (r *memoryRepo) Education(_ context.Context) ([]model.Education, error) {
 	return cloneEducation(r.snap.Education), nil
 }
 
+func (r *memoryRepo) EducationByID(_ context.Context, id string) (*model.Education, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	for i := range r.snap.Education {
+		if r.snap.Education[i].ID == id {
+			e := r.snap.Education[i]
+			return &e, nil
+		}
+	}
+	return nil, ErrNotFound
+}
+
+func (r *memoryRepo) UpsertEducation(_ context.Context, e model.Education) (model.Education, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for i := range r.snap.Education {
+		if r.snap.Education[i].ID == e.ID {
+			r.snap.Education[i] = e
+			return e, nil
+		}
+	}
+	r.snap.Education = append(r.snap.Education, e)
+	return e, nil
+}
+
+func (r *memoryRepo) DeleteEducation(_ context.Context, id string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for i := range r.snap.Education {
+		if r.snap.Education[i].ID == id {
+			r.snap.Education = append(r.snap.Education[:i], r.snap.Education[i+1:]...)
+			return nil
+		}
+	}
+	return ErrNotFound
+}
+
 func (r *memoryRepo) Timeline(_ context.Context) ([]model.TimelineEvent, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	return cloneTimeline(r.snap.Timeline), nil
+}
+
+func (r *memoryRepo) TimelineByID(_ context.Context, id string) (*model.TimelineEvent, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	for i := range r.snap.Timeline {
+		if r.snap.Timeline[i].ID == id {
+			t := r.snap.Timeline[i]
+			return &t, nil
+		}
+	}
+	return nil, ErrNotFound
+}
+
+func (r *memoryRepo) UpsertTimeline(_ context.Context, t model.TimelineEvent) (model.TimelineEvent, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for i := range r.snap.Timeline {
+		if r.snap.Timeline[i].ID == t.ID {
+			r.snap.Timeline[i] = t
+			return t, nil
+		}
+	}
+	r.snap.Timeline = append(r.snap.Timeline, t)
+	return t, nil
+}
+
+func (r *memoryRepo) DeleteTimeline(_ context.Context, id string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for i := range r.snap.Timeline {
+		if r.snap.Timeline[i].ID == id {
+			r.snap.Timeline = append(r.snap.Timeline[:i], r.snap.Timeline[i+1:]...)
+			return nil
+		}
+	}
+	return ErrNotFound
+}
+
+func (r *memoryRepo) GetSetting(_ context.Context, key string) (string, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	if r.settings == nil {
+		return "", ErrNotFound
+	}
+	v, ok := r.settings[key]
+	if !ok {
+		return "", ErrNotFound
+	}
+	return v, nil
+}
+
+func (r *memoryRepo) SetSetting(_ context.Context, key, value string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.settings == nil {
+		r.settings = map[string]string{}
+	}
+	r.settings[key] = value
+	return nil
 }
 
 func cloneSnap(s model.ContentSnapshot) model.ContentSnapshot {

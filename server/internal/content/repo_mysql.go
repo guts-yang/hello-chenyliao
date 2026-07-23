@@ -387,6 +387,48 @@ func (r *mysqlRepo) Education(ctx context.Context) ([]model.Education, error) {
 	return out, rows.Err()
 }
 
+func (r *mysqlRepo) EducationByID(ctx context.Context, id string) (*model.Education, error) {
+	row := r.db.QueryRowContext(ctx, `
+		SELECT id, school_zh, school_en, degree_zh, degree_en, COALESCE(notes_zh,''), COALESCE(notes_en,''),
+		DATE_FORMAT(started_at,'%Y-%m'), IFNULL(DATE_FORMAT(ended_at,'%Y-%m'),''), display_order
+		FROM education WHERE id=?`, id)
+	var e model.Education
+	if err := row.Scan(&e.ID, &e.School.ZH, &e.School.EN, &e.Degree.ZH, &e.Degree.EN,
+		&e.Notes.ZH, &e.Notes.EN, &e.StartedAt, &e.EndedAt, &e.DisplayOrder); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	return &e, nil
+}
+
+func (r *mysqlRepo) UpsertEducation(ctx context.Context, e model.Education) (model.Education, error) {
+	_, err := r.db.ExecContext(ctx, `
+		INSERT INTO education (id, school_zh, school_en, degree_zh, degree_en, notes_zh, notes_en,
+			started_at, ended_at, display_order)
+		VALUES (?,?,?,?,?,?,?,?,?,?)
+		ON DUPLICATE KEY UPDATE school_zh=VALUES(school_zh), school_en=VALUES(school_en),
+			degree_zh=VALUES(degree_zh), degree_en=VALUES(degree_en), notes_zh=VALUES(notes_zh),
+			notes_en=VALUES(notes_en), started_at=VALUES(started_at), ended_at=VALUES(ended_at),
+			display_order=VALUES(display_order)`,
+		e.ID, e.School.ZH, e.School.EN, e.Degree.ZH, e.Degree.EN,
+		nullStr(e.Notes.ZH), nullStr(e.Notes.EN),
+		parseDate(e.StartedAt), parseDatePtr(e.EndedAt), e.DisplayOrder)
+	return e, err
+}
+
+func (r *mysqlRepo) DeleteEducation(ctx context.Context, id string) error {
+	res, err := r.db.ExecContext(ctx, `DELETE FROM education WHERE id=?`, id)
+	if err != nil {
+		return err
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
 func (r *mysqlRepo) Timeline(ctx context.Context) ([]model.TimelineEvent, error) {
 	rows, err := r.db.QueryContext(ctx, `
 		SELECT id, DATE_FORMAT(date,'%Y-%m'), kind, title_zh, title_en, body_zh, body_en
@@ -404,6 +446,58 @@ func (r *mysqlRepo) Timeline(ctx context.Context) ([]model.TimelineEvent, error)
 		out = append(out, t)
 	}
 	return out, rows.Err()
+}
+
+func (r *mysqlRepo) TimelineByID(ctx context.Context, id string) (*model.TimelineEvent, error) {
+	row := r.db.QueryRowContext(ctx, `
+		SELECT id, DATE_FORMAT(date,'%Y-%m'), kind, title_zh, title_en, body_zh, body_en
+		FROM timeline WHERE id=?`, id)
+	var t model.TimelineEvent
+	if err := row.Scan(&t.ID, &t.Date, &t.Kind, &t.Title.ZH, &t.Title.EN, &t.Body.ZH, &t.Body.EN); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	return &t, nil
+}
+
+func (r *mysqlRepo) UpsertTimeline(ctx context.Context, t model.TimelineEvent) (model.TimelineEvent, error) {
+	_, err := r.db.ExecContext(ctx, `
+		INSERT INTO timeline (id, date, kind, title_zh, title_en, body_zh, body_en)
+		VALUES (?,?,?,?,?,?,?)
+		ON DUPLICATE KEY UPDATE date=VALUES(date), kind=VALUES(kind), title_zh=VALUES(title_zh),
+			title_en=VALUES(title_en), body_zh=VALUES(body_zh), body_en=VALUES(body_en)`,
+		t.ID, parseDate(t.Date), t.Kind, t.Title.ZH, t.Title.EN, t.Body.ZH, t.Body.EN)
+	return t, err
+}
+
+func (r *mysqlRepo) DeleteTimeline(ctx context.Context, id string) error {
+	res, err := r.db.ExecContext(ctx, `DELETE FROM timeline WHERE id=?`, id)
+	if err != nil {
+		return err
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+func (r *mysqlRepo) GetSetting(ctx context.Context, key string) (string, error) {
+	var value string
+	err := r.db.QueryRowContext(ctx, `SELECT value FROM site_settings WHERE `+"`key`"+`=?`, key).Scan(&value)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", ErrNotFound
+	}
+	return value, err
+}
+
+func (r *mysqlRepo) SetSetting(ctx context.Context, key, value string) error {
+	_, err := r.db.ExecContext(ctx, `
+		INSERT INTO site_settings (`+"`key`"+`, value, updated_at) VALUES (?,?,?)
+		ON DUPLICATE KEY UPDATE value=VALUES(value), updated_at=VALUES(updated_at)`,
+		key, value, time.Now().UTC())
+	return err
 }
 
 type execer interface {
