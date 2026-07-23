@@ -1,14 +1,10 @@
-export type Locale = 'zh' | 'en';
-export type Localized = Record<Locale, string>;
-
 export interface Profile {
   id?: string;
-  nameZh: string;
-  nameEn: string;
+  name: string;
   handle: string;
-  role: Localized;
-  slogan: Localized;
-  bio: Localized;
+  role: string;
+  slogan: string;
+  bio: string;
   avatarUrl?: string;
   socials?: Array<{ type: string; href: string; label?: string }>;
   updatedAt?: string;
@@ -18,11 +14,11 @@ export interface Project {
   id?: string;
   slug: string;
   kind?: string;
-  title: Localized;
-  tagline: Localized;
-  summary: Localized;
+  title: string;
+  tagline: string;
+  summary: string;
   tags: string[];
-  highlights: Localized[];
+  highlights: string[];
   startedAt: string;
   endedAt?: string;
   link?: string;
@@ -35,10 +31,10 @@ export interface Project {
 export interface Experience {
   id?: string;
   slug: string;
-  org: Localized;
-  role: Localized;
-  summary: Localized;
-  metrics: Localized[];
+  org: string;
+  role: string;
+  summary: string;
+  metrics: string[];
   startedAt: string;
   endedAt?: string;
   link?: string;
@@ -49,17 +45,17 @@ export interface Experience {
 export interface Honor {
   id?: string;
   pillar: string;
-  title: Localized;
-  story: Localized;
+  title: string;
+  story: string;
   displayOrder?: number;
   isPublished?: boolean;
 }
 
 export interface Education {
   id?: string;
-  school: Localized;
-  degree: Localized;
-  notes?: Localized;
+  school: string;
+  degree: string;
+  notes?: string;
   startedAt: string;
   endedAt?: string;
   displayOrder?: number;
@@ -69,8 +65,17 @@ export interface TimelineEvent {
   id?: string;
   date: string;
   kind: string;
-  title: Localized;
-  body: Localized;
+  title: string;
+  body: string;
+}
+
+export interface VisualSettings {
+  heroVideoUrl: string;
+  featureVideoUrl: string;
+  featureIconProjects: string;
+  featureIconExperience: string;
+  featureIconEducation: string;
+  updatedAt?: string;
 }
 
 export interface HomeContent {
@@ -80,6 +85,7 @@ export interface HomeContent {
   honors: Honor[];
   education: Education[];
   timeline: TimelineEvent[];
+  visuals: VisualSettings;
 }
 
 export interface ChatMessage {
@@ -93,7 +99,7 @@ export interface ChatMessage {
 export interface ChatSession {
   id: string;
   title: string;
-  locale: Locale;
+  locale?: string;
   createdAt: string;
   updatedAt: string;
 }

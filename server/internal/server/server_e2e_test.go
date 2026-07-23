@@ -82,6 +82,9 @@ func TestHealthAndPublicHome(t *testing.T) {
 	if home["profile"] == nil {
 		t.Fatal("missing profile")
 	}
+	if home["visuals"] == nil {
+		t.Fatal("missing visuals")
+	}
 }
 
 func TestChatNDJSONDemo(t *testing.T) {
@@ -89,7 +92,7 @@ func TestChatNDJSONDemo(t *testing.T) {
 	ts := httptest.NewServer(s.Handler())
 	t.Cleanup(ts.Close)
 
-	body := `{"locale":"zh","messages":[{"role":"user","content":"你好"}]}`
+	body := `{"messages":[{"role":"user","content":"你好"}]}`
 	res, err := http.Post(ts.URL+"/api/chat", "application/json", strings.NewReader(body))
 	if err != nil {
 		t.Fatal(err)
@@ -115,6 +118,9 @@ func TestChatNDJSONDemo(t *testing.T) {
 		if ev["t"] == "d" {
 			gotDelta = true
 		}
+	}
+	if err := sc.Err(); err != nil {
+		t.Fatal(err)
 	}
 	if !gotDelta {
 		t.Fatal("expected delta events")
@@ -166,7 +172,7 @@ func TestAdminLoginCSRFAndProfile(t *testing.T) {
 		t.Fatalf("session=%v", sess)
 	}
 
-	req3, _ := http.NewRequest(http.MethodPut, ts.URL+"/api/admin/profile", strings.NewReader(`{"nameZh":"测试","nameEn":"Test","handle":"gutsyang","role":{"zh":"r","en":"r"},"slogan":{"zh":"s","en":"s"},"bio":{"zh":"b","en":"b"},"socials":[]}`))
+	req3, _ := http.NewRequest(http.MethodPut, ts.URL+"/api/admin/profile", strings.NewReader(`{"name":"测试","handle":"gutsyang","role":"r","slogan":"s","bio":"b","socials":[]}`))
 	req3.Header.Set("Content-Type", "application/json")
 	req3.Header.Set("X-CSRF-Token", csrf)
 	req3.AddCookie(&http.Cookie{Name: "hello_gutsyang_admin_session", Value: session})
@@ -233,8 +239,8 @@ func TestAdminEducationTimelineResumeCSRF(t *testing.T) {
 
 	// Missing CSRF must fail.
 	badReq, _ := http.NewRequest(http.MethodPost, ts.URL+"/api/admin/education", strings.NewReader(`{
-		"school":{"zh":"测校","en":"Test Uni"},
-		"degree":{"zh":"本科","en":"BS"},
+		"school":"测校",
+		"degree":"本科",
 		"startedAt":"2023-09",
 		"endedAt":"2027-07",
 		"displayOrder":1
@@ -252,8 +258,8 @@ func TestAdminEducationTimelineResumeCSRF(t *testing.T) {
 	}
 
 	eduBody := `{
-		"school":{"zh":"测校","en":"Test Uni"},
-		"degree":{"zh":"本科","en":"BS"},
+		"school":"测校",
+		"degree":"本科",
 		"startedAt":"2023-09",
 		"endedAt":"2027-07",
 		"displayOrder":1
@@ -282,8 +288,8 @@ func TestAdminEducationTimelineResumeCSRF(t *testing.T) {
 	tlBody := `{
 		"date":"2026-07",
 		"kind":"project",
-		"title":{"zh":"测试节点","en":"Test node"},
-		"body":{"zh":"描述","en":"Body"}
+		"title":"测试节点",
+		"body":"描述"
 	}`
 	tlReq, _ := http.NewRequest(http.MethodPost, ts.URL+"/api/admin/timeline", strings.NewReader(tlBody))
 	tlReq.Header.Set("Content-Type", "application/json")
@@ -347,12 +353,61 @@ func TestAdminEducationTimelineResumeCSRF(t *testing.T) {
 	}
 }
 
+func TestAdminVisualsCSRF(t *testing.T) {
+	s := testServer(t)
+	ts := httptest.NewServer(s.Handler())
+	t.Cleanup(ts.Close)
+	session, csrf := adminLogin(t, ts)
+
+	getReq, _ := http.NewRequest(http.MethodGet, ts.URL+"/api/admin/visuals", nil)
+	getReq.AddCookie(&http.Cookie{Name: "hello_gutsyang_admin_session", Value: session})
+	getRes, err := ts.Client().Do(getReq)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer getRes.Body.Close()
+	if getRes.StatusCode != http.StatusOK {
+		t.Fatalf("visuals get=%d", getRes.StatusCode)
+	}
+
+	body := `{"heroVideoUrl":"/uploads/hero.mp4","featureVideoUrl":"/uploads/feature.webm"}`
+	badReq, _ := http.NewRequest(http.MethodPut, ts.URL+"/api/admin/visuals", strings.NewReader(body))
+	badReq.AddCookie(&http.Cookie{Name: "hello_gutsyang_admin_session", Value: session})
+	badReq.AddCookie(&http.Cookie{Name: "hello_gutsyang_admin_session_csrf", Value: csrf})
+	badRes, err := ts.Client().Do(badReq)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer badRes.Body.Close()
+	if badRes.StatusCode != http.StatusForbidden {
+		t.Fatalf("visuals missing csrf=%d", badRes.StatusCode)
+	}
+
+	putReq, _ := http.NewRequest(http.MethodPut, ts.URL+"/api/admin/visuals", strings.NewReader(body))
+	putReq.Header.Set("Content-Type", "application/json")
+	putReq.Header.Set("X-CSRF-Token", csrf)
+	putReq.AddCookie(&http.Cookie{Name: "hello_gutsyang_admin_session", Value: session})
+	putReq.AddCookie(&http.Cookie{Name: "hello_gutsyang_admin_session_csrf", Value: csrf})
+	putRes, err := ts.Client().Do(putReq)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer putRes.Body.Close()
+	if putRes.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(putRes.Body)
+		t.Fatalf("visuals put=%d %s", putRes.StatusCode, b)
+	}
+}
+
 func TestMediaMimeAllowlist(t *testing.T) {
 	if !media.IsAllowedMimeType("image/png") {
 		t.Fatal("png should be allowed")
 	}
 	if !media.IsAllowedMimeType("application/pdf") {
 		t.Fatal("pdf should be allowed")
+	}
+	if !media.IsAllowedMimeType("video/mp4") || !media.IsAllowedMimeType("video/webm") {
+		t.Fatal("mp4 and webm should be allowed")
 	}
 	if media.IsAllowedMimeType("application/exe") {
 		t.Fatal("exe should be rejected")
@@ -364,7 +419,7 @@ func TestChatSessionsMemory(t *testing.T) {
 	ts := httptest.NewServer(s.Handler())
 	t.Cleanup(ts.Close)
 
-	body := `{"locale":"en","messages":[{"role":"user","content":"hello world from test"}]}`
+	body := `{"messages":[{"role":"user","content":"来自测试的问候"}]}`
 	req, _ := http.NewRequest(http.MethodPost, ts.URL+"/api/chat", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	res, err := http.DefaultClient.Do(req)

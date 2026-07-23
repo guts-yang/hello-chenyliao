@@ -8,8 +8,7 @@ const config: Config = {
         primary: '#DEDBC8',
       },
       fontFamily: {
-        sans: ['Almarai', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'sans-serif'],
-        serif: ['"Instrument Serif"', 'serif'],
+        sans: ['"Noto Sans SC"', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'sans-serif'],
       },
     },
   },

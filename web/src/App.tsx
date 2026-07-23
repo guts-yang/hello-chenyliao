@@ -9,32 +9,31 @@ import { DetailView } from '@/views/DetailView';
 import { HomeView } from '@/views/HomeView';
 
 export default function App() {
-  const { route, navigate, switchLocale } = useRouter();
+  const { route, navigate } = useRouter();
 
   if (route.kind.startsWith('admin')) {
     return <AdminApp route={route} navigate={navigate} />;
   }
 
   return (
-    <PreferencesProvider locale={route.locale}>
+    <PreferencesProvider>
       <ContentProvider>
         <ChatProvider>
           <div className="relative min-h-screen overflow-x-hidden bg-black text-[#E1E0CC]">
-            <Navbar route={route} navigate={navigate} switchLocale={switchLocale} />
+            <Navbar route={route} navigate={navigate} />
             <main>
               {route.kind === 'home' ? (
-                <HomeView locale={route.locale} navigate={navigate} />
+                <HomeView navigate={navigate} />
               ) : (
                 <DetailView
-                  locale={route.locale}
                   kind={route.kind === 'project' ? 'project' : 'experience'}
                   slug={route.slug || ''}
                   navigate={navigate}
                 />
               )}
             </main>
-            <SiteFooter locale={route.locale} />
-            <ChatPanel locale={route.locale} />
+            <SiteFooter />
+            <ChatPanel />
           </div>
         </ChatProvider>
       </ContentProvider>

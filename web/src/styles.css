@@ -4,7 +4,7 @@
 
 * {
   box-sizing: border-box;
-  font-family: 'Almarai', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 html,
@@ -27,11 +27,6 @@ a {
 
 ::selection {
   background: rgb(222 219 200 / 0.3);
-}
-
-.font-serif,
-.font-serif * {
-  font-family: 'Instrument Serif', serif;
 }
 
 .noise-overlay {

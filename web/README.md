@@ -1,6 +1,6 @@
 # Web
 
-React 18 + Vite 单页应用，使用 TypeScript、Tailwind CSS、framer-motion 与 lucide-react。视觉语言参考 Prisma：黑色电影感、暖奶油色、Almarai / Instrument Serif、pull-up 字词动画与滚动字符 reveal；内容仍是 gutsyang 双语个人作品集。
+React 18 + Vite 单页应用，使用 TypeScript、Tailwind CSS、framer-motion 与 lucide-react。视觉语言参考 Prisma：黑色电影感、暖奶油色、Noto Sans SC 与动效；内容为廖晨扬中文单语个人作品集。
 
 ```bash
 npm install --prefix web
@@ -12,8 +12,8 @@ npm run build --prefix web
 
 ## 路由
 
-- 公开站：`/zh`、`/en`，以及项目/经历详情。
-- 管理后台：`/admin/login`、`/admin`、`/admin/{section}`（profile、projects、experiences、honors、education、timeline、resume、media、settings、audit）。后台不挂载公开 Navbar / Chat / ContentProvider。
+- 公开站：`/`、`/projects/:slug`、`/experience/:slug`（`/zh`、`/en` 旧路径兼容跳转）。
+- 管理后台：`/admin/login`、`/admin`、`/admin/{section}`（profile、projects、experiences、honors、education、timeline、resume、media、visuals、settings、audit）。`/admin/visuals` 可上传、预览并保存首页视频和三类图标。后台不挂载公开 Navbar / Chat / ContentProvider。
 
 后台写操作通过 `web/src/lib/adminApi.ts` 自动读取 CSRF cookie 并注入 `X-CSRF-Token`。公开内容 API 前缀为 `/api/public/*`；简历下载为 `/api/resume.pdf`。
 

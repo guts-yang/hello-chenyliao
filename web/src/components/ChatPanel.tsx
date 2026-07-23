@@ -2,13 +2,11 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Plus, Send, X } from 'lucide-react';
 import { useChat } from '@/hooks/useChat';
-import { t } from '@/i18n';
-import type { Locale } from '@/types';
+import { copy } from '@/copy';
 import { cn } from '@/lib/utils';
 
-export function ChatPanel({ locale }: { locale: Locale }) {
+export function ChatPanel() {
   const chat = useChat();
-  const copy = t(locale);
   const [input, setInput] = useState('');
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -25,7 +23,7 @@ export function ChatPanel({ locale }: { locale: Locale }) {
     event.preventDefault();
     const value = input;
     setInput('');
-    await chat.send(value, locale);
+    await chat.send(value);
   }
 
   return (
@@ -88,7 +86,7 @@ export function ChatPanel({ locale }: { locale: Locale }) {
                     >
                       <span className="block truncate">{session.title}</span>
                       <small className="block text-gray-500">
-                        {new Date(session.updatedAt).toLocaleDateString(locale)}
+                        {new Date(session.updatedAt).toLocaleDateString('zh-CN')}
                       </small>
                     </button>
                   ))}

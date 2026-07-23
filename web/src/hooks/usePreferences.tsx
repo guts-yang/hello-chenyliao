@@ -1,31 +1,14 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import type { Locale } from '@/types';
 
 interface PreferencesContextValue {
-  locale: Locale;
   dark: boolean;
-  setLocale: (locale: Locale) => void;
   toggleTheme: () => void;
 }
 
 const PreferencesContext = createContext<PreferencesContextValue | null>(null);
 
-export function PreferencesProvider({
-  locale,
-  children,
-}: {
-  locale: Locale;
-  children: ReactNode;
-}) {
+export function PreferencesProvider({ children }: { children: ReactNode }) {
   const [dark, setDark] = useState(() => localStorage.getItem('theme') !== 'light');
-
-  const setLocale = useCallback((next: Locale) => {
-    document.documentElement.lang = next;
-  }, []);
-
-  useEffect(() => {
-    setLocale(locale);
-  }, [locale, setLocale]);
 
   useEffect(() => {
     document.documentElement.dataset.theme = dark ? 'dark' : 'light';
@@ -40,8 +23,8 @@ export function PreferencesProvider({
   }, []);
 
   const value = useMemo(
-    () => ({ locale, dark, setLocale, toggleTheme }),
-    [locale, dark, setLocale, toggleTheme],
+    () => ({ dark, toggleTheme }),
+    [dark, toggleTheme],
   );
 
   return <PreferencesContext.Provider value={value}>{children}</PreferencesContext.Provider>;

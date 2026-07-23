@@ -14,6 +14,7 @@ const nav: Array<{ section: AdminSection; href: string; label: string }> = [
   { section: 'timeline', href: '/admin/timeline', label: '时间线' },
   { section: 'resume', href: '/admin/resume', label: '简历' },
   { section: 'media', href: '/admin/media', label: '媒体' },
+  { section: 'visuals', href: '/admin/visuals', label: '站点插图' },
   { section: 'settings', href: '/admin/settings', label: '账户设置' },
   { section: 'audit', href: '/admin/audit', label: '审计日志' },
 ];
@@ -41,7 +42,7 @@ export function AdminLayout({
         >
           <div className="mb-8 flex items-center justify-between">
             <div>
-              <div className="text-sm font-semibold text-primary">gutsyang Admin</div>
+              <div className="text-sm font-semibold text-primary">廖晨扬 Admin</div>
               <div className="mt-1 text-xs text-gray-500">{user?.email}</div>
             </div>
             <button type="button" className="md:hidden" onClick={() => setOpen(false)}>
@@ -71,7 +72,7 @@ export function AdminLayout({
           <div className="mt-8 space-y-2">
             <button
               type="button"
-              onClick={() => navigate('/zh')}
+              onClick={() => navigate('/')}
               className="w-full rounded-xl border border-primary/15 px-3 py-2 text-left text-xs text-primary/80"
             >
               查看公开站

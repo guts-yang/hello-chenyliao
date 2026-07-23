@@ -15,25 +15,22 @@ import {
   Star,
 } from 'lucide-react';
 import { ScrollRevealText } from '@/components/motion/AnimatedLetter';
-import { WordsPullUp } from '@/components/motion/WordsPullUp';
 import { WordsPullUpMultiStyle } from '@/components/motion/WordsPullUpMultiStyle';
 import { CreamButton, SectionEyebrow } from '@/components/primitives';
+import { copy } from '@/copy';
 import { useChat } from '@/hooks/useChat';
 import { useContent } from '@/hooks/useContent';
-import { t } from '@/i18n';
 import { apiUrl } from '@/lib/api';
-import { localized } from '@/lib/utils';
-import type { Locale } from '@/types';
 
-const HERO_VIDEO =
+export const HERO_VIDEO =
   'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260405_170732_8a9ccda6-5cff-4628-b164-059c500a2b41.mp4';
-const FEATURE_VIDEO =
+export const FEATURE_VIDEO =
   'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260406_133058_0504132a-0cf3-4450-a370-8ea3b05c95d4.mp4';
-const ICON_STORYBOARD =
+export const ICON_STORYBOARD =
   'https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260405_171918_4a5edc79-d78f-4637-ac8b-53c43c220606.png&w=1280&q=85';
-const ICON_CRITIQUES =
+export const ICON_CRITIQUES =
   'https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260405_171741_ed9845ab-f5b2-4018-8ce7-07cc01823522.png&w=1280&q=85';
-const ICON_IMMERSION =
+export const ICON_IMMERSION =
   'https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260405_171809_f56666dc-c099-4778-ad82-9ad4f209567b.png&w=1280&q=85';
 
 function FeatureCard({
@@ -76,16 +73,9 @@ function FeatureCard({
   );
 }
 
-export function HomeView({
-  locale,
-  navigate,
-}: {
-  locale: Locale;
-  navigate: (to: string) => void;
-}) {
+export function HomeView({ navigate }: { navigate: (to: string) => void }) {
   const content = useContent();
   const chat = useChat();
-  const copy = t(locale);
   const data = content.data;
   const { load } = content;
   const [timelineExpanded, setTimelineExpanded] = useState(false);
@@ -124,44 +114,39 @@ export function HomeView({
 
   if (!data) return null;
 
-  const name = locale === 'zh' ? data.profile.nameZh : data.profile.nameEn;
-  const role = localized(data.profile.role, locale);
-  const slogan = localized(data.profile.slogan, locale);
-  const bio = localized(data.profile.bio, locale);
-  const brand = data.profile.handle || 'gutsyang';
+  const { name, role, slogan, bio } = data.profile;
   const tags = Array.from(new Set(data.projects.flatMap((project) => project.tags))).slice(0, 8);
   const activeProject = data.projects[0];
   const researchProjects = [...data.projects]
     .sort((a, b) => (b.displayOrder ?? 0) - (a.displayOrder ?? 0))
     .slice(0, 4);
 
-  const aboutLead =
-    locale === 'zh' ? `我是${name}，` : `I am ${name.split(' ')[0] || name},`;
-  const aboutAccent = locale === 'zh' ? role : role.toLowerCase().replace(/^an?\s+/i, '');
+  const aboutLead = `我是${name}，`;
+  const aboutAccent = role;
   const aboutTail = slogan;
 
   const deskItems = [
     ...data.projects.slice(0, 3).map((project) => ({
       id: project.slug,
       kind: 'project' as const,
-      title: localized(project.title, locale),
-      preview: localized(project.tagline, locale),
+      title: project.title,
+      preview: project.tagline,
       meta: project.startedAt,
       unread: true,
     })),
     ...data.experiences.slice(0, 2).map((item) => ({
       id: item.slug,
       kind: 'experience' as const,
-      title: localized(item.org, locale),
-      preview: localized(item.role, locale),
+      title: item.org,
+      preview: item.role,
       meta: item.startedAt,
       unread: false,
     })),
     ...data.timeline.slice(0, 1).map((event) => ({
       id: event.id || event.date,
       kind: 'timeline' as const,
-      title: localized(event.title, locale),
-      preview: localized(event.body, locale),
+      title: event.title,
+      preview: event.body,
       meta: event.date,
       unread: false,
     })),
@@ -180,23 +165,23 @@ export function HomeView({
     {
       title: copy.home.projects,
       number: '01',
-      icon: ICON_STORYBOARD,
-      items: data.projects.slice(0, 4).map((item) => localized(item.title, locale)),
-      href: `/${locale}#projects`,
+      icon: data.visuals.featureIconProjects,
+      items: data.projects.slice(0, 4).map((item) => item.title),
+      href: '/#projects',
     },
     {
       title: copy.home.experience,
       number: '02',
-      icon: ICON_CRITIQUES,
-      items: data.experiences.slice(0, 3).map((item) => localized(item.org, locale)),
-      href: `/${locale}#experience`,
+      icon: data.visuals.featureIconExperience,
+      items: data.experiences.slice(0, 3).map((item) => item.org),
+      href: '/#experience',
     },
     {
       title: copy.home.education,
       number: '03',
-      icon: ICON_IMMERSION,
-      items: data.education.slice(0, 3).map((item) => localized(item.school, locale)),
-      href: `/${locale}#experience`,
+      icon: data.visuals.featureIconEducation,
+      items: data.education.slice(0, 3).map((item) => item.school),
+      href: '/#experience',
     },
   ];
 
@@ -211,7 +196,7 @@ export function HomeView({
             muted
             playsInline
             className="absolute inset-0 h-full w-full object-cover"
-            src={HERO_VIDEO}
+            src={data.visuals.heroVideoUrl}
           />
           <div className="noise-overlay pointer-events-none absolute inset-0 opacity-[0.7] mix-blend-overlay" />
           <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/60" />
@@ -219,10 +204,10 @@ export function HomeView({
           <div className="absolute bottom-0 left-0 right-0 grid grid-cols-1 gap-6 p-5 md:grid-cols-12 md:gap-8 md:p-8 lg:p-10">
             <div className="md:col-span-8">
               <h1
-                className="font-medium leading-[0.85] tracking-[-0.07em] text-[26vw] sm:text-[24vw] md:text-[22vw] lg:text-[20vw] xl:text-[19vw] 2xl:text-[20vw]"
+                className="whitespace-nowrap font-medium leading-[0.85] tracking-[-0.07em] text-[clamp(4rem,15vw,14rem)]"
                 style={{ color: '#E1E0CC' }}
               >
-                <WordsPullUp text={brand} showAsterisk />
+                <motion.span initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>{name}</motion.span>
               </h1>
             </div>
             <div className="flex flex-col justify-end gap-5 md:col-span-4 md:pb-4">
@@ -243,7 +228,7 @@ export function HomeView({
                 <CreamButton label={copy.nav.resume} href={apiUrl('/api/resume.pdf')} />
                 <button
                   type="button"
-                  onClick={() => navigate(`/${locale}#projects`)}
+                  onClick={() => navigate('/#projects')}
                   className="inline-flex items-center gap-2 rounded-full border border-primary/20 px-4 py-2.5 text-sm text-primary/80 hover:bg-white/5"
                 >
                   {copy.home.projects}
@@ -251,6 +236,7 @@ export function HomeView({
                 </button>
               </motion.div>
               <div className="flex flex-wrap gap-4 text-xs text-gray-400">
+                {data.profile.avatarUrl ? <img src={data.profile.avatarUrl} alt={`${name} 头像`} className="h-10 w-10 rounded-full object-cover" /> : null}
                 {data.profile.socials?.map((social) => (
                   <a key={social.type} href={social.href} target="_blank" rel="noreferrer" className="hover:text-primary">
                     {social.label || social.type}
@@ -270,7 +256,7 @@ export function HomeView({
             <WordsPullUpMultiStyle
               segments={[
                 { text: aboutLead, className: 'font-normal text-[#E1E0CC]' },
-                { text: aboutAccent, className: 'font-serif italic text-[#E1E0CC]' },
+                { text: aboutAccent, className: 'text-[#E1E0CC]' },
                 { text: aboutTail, className: 'font-normal text-[#E1E0CC]' },
               ]}
             />
@@ -302,11 +288,11 @@ export function HomeView({
               className="text-xl font-normal sm:text-2xl md:text-3xl lg:text-4xl"
               segments={[
                 {
-                  text: locale === 'zh' ? '面向愿景型创作者的工作室级工作流。' : 'Studio-grade workflows for visionary creators.',
+                  text: '面向愿景型创作者的工作室级工作流。',
                   className: 'text-[#E1E0CC]',
                 },
                 {
-                  text: locale === 'zh' ? '为纯粹视野而生，以研究与工程驱动。' : 'Built for pure vision. Powered by art.',
+                  text: '为纯粹视野而生，以研究与工程驱动。',
                   className: 'text-gray-500',
                 },
               ]}
@@ -317,13 +303,13 @@ export function HomeView({
             <FeatureCard
               index={0}
               className="relative overflow-hidden rounded-2xl text-left lg:h-full"
-              onClick={() => activeProject && navigate(`/${locale}/projects/${activeProject.slug}`)}
+              onClick={() => activeProject && navigate(`/projects/${activeProject.slug}`)}
             >
-              <video autoPlay loop muted playsInline className="absolute inset-0 h-full w-full object-cover" src={FEATURE_VIDEO} />
+              <video autoPlay loop muted playsInline className="absolute inset-0 h-full w-full object-cover" src={data.visuals.featureVideoUrl} />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
               <div className="relative flex min-h-[280px] items-end p-5 lg:min-h-full">
                 <span className="text-lg font-medium" style={{ color: '#E1E0CC' }}>
-                  {locale === 'zh' ? '你的创作画布。' : 'Your creative canvas.'}
+                  你的创作画布。
                 </span>
               </div>
             </FeatureCard>
@@ -413,9 +399,9 @@ export function HomeView({
                     key={item.id}
                     type="button"
                     onClick={() => {
-                      if (item.kind === 'project') navigate(`/${locale}/projects/${item.id}`);
-                      if (item.kind === 'experience') navigate(`/${locale}/experience/${item.id}`);
-                      if (item.kind === 'timeline') navigate(`/${locale}#timeline`);
+                      if (item.kind === 'project') navigate(`/projects/${item.id}`);
+                      if (item.kind === 'experience') navigate(`/experience/${item.id}`);
+                      if (item.kind === 'timeline') navigate('/#timeline');
                     }}
                     className={index === 0 ? 'w-full bg-white/10 px-4 py-3 text-left' : 'w-full px-4 py-3 text-left hover:bg-white/5'}
                   >
@@ -434,7 +420,7 @@ export function HomeView({
             <div className="p-4 md:col-span-5">
               {activeProject ? (
                 <>
-                  <h3 className="text-lg font-semibold text-[#E1E0CC]">{localized(activeProject.title, locale)}</h3>
+                  <h3 className="text-lg font-semibold text-[#E1E0CC]">{activeProject.title}</h3>
                   <div className="mt-3 flex items-center gap-3">
                     <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-semibold text-black">
                       G
@@ -452,10 +438,10 @@ export function HomeView({
                       {copy.home.summaryBy}
                     </div>
                     <p className="text-sm leading-relaxed text-gray-400">
-                      {localized(activeProject.highlights[0], locale) || localized(activeProject.summary, locale)}
+                      {activeProject.highlights[0] || activeProject.summary}
                     </p>
                   </div>
-                  <p className="mt-5 text-sm leading-relaxed text-gray-400">{localized(activeProject.summary, locale)}</p>
+                  <p className="mt-5 text-sm leading-relaxed text-gray-400">{activeProject.summary}</p>
                   <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-primary/10 px-3 py-1.5 text-xs text-gray-400">
                     <Paperclip className="h-3.5 w-3.5" />
                     resume.pdf
@@ -501,18 +487,21 @@ export function HomeView({
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.2 }}
               transition={{ delay: index * 0.05, duration: 0.5 }}
-              onClick={() => navigate(`/${locale}/projects/${project.slug}`)}
+              onClick={() => navigate(`/projects/${project.slug}`)}
               className={`rounded-2xl bg-[#212121] p-6 text-left ${index === 0 ? 'md:col-span-2' : ''}`}
             >
+              {project.coverUrl ? (
+                <img src={project.coverUrl} alt={`${project.title} 封面`} className="mb-5 h-48 w-full rounded-xl object-cover" />
+              ) : null}
               <div className="flex items-center gap-3 text-xs text-gray-500">
                 <span className="rounded-full border border-primary/15 px-2 py-0.5 text-primary/70">{project.kind}</span>
                 <span>{project.startedAt}</span>
               </div>
               <h3 className="mt-5 text-2xl font-normal tracking-tight text-[#E1E0CC] md:text-3xl">
-                {localized(project.title, locale)}
+                {project.title}
               </h3>
-              <p className="mt-3 text-primary/80">{localized(project.tagline, locale)}</p>
-              <p className="mt-2 text-sm text-gray-400">{localized(project.summary, locale)}</p>
+              <p className="mt-3 text-primary/80">{project.tagline}</p>
+              <p className="mt-2 text-sm text-gray-400">{project.summary}</p>
               <div className="mt-5 flex flex-wrap gap-2">
                 {project.tags.map((tag) => (
                   <span key={tag} className="rounded-full border border-primary/10 px-2.5 py-1 text-xs text-gray-400">
@@ -540,17 +529,17 @@ export function HomeView({
                 <button
                   key={item.slug}
                   type="button"
-                  onClick={() => navigate(`/${locale}/experience/${item.slug}`)}
+                  onClick={() => navigate(`/experience/${item.slug}`)}
                   className="block w-full rounded-2xl bg-[#212121] p-6 text-left"
                 >
                   <div className="text-xs text-gray-500">{item.startedAt}</div>
-                  <h3 className="mt-3 text-xl font-normal text-[#E1E0CC]">{localized(item.org, locale)}</h3>
-                  <div className="mt-1 text-sm text-primary/80">{localized(item.role, locale)}</div>
-                  <p className="mt-3 line-clamp-3 text-sm text-gray-400">{localized(item.summary, locale)}</p>
+                  <h3 className="mt-3 text-xl font-normal text-[#E1E0CC]">{item.org}</h3>
+                  <div className="mt-1 text-sm text-primary/80">{item.role}</div>
+                  <p className="mt-3 line-clamp-3 text-sm text-gray-400">{item.summary}</p>
                   <div className="mt-4 flex flex-wrap gap-2">
                     {item.metrics.slice(0, 2).map((metric) => (
-                      <span key={localized(metric, locale)} className="rounded-lg bg-black/40 px-3 py-2 text-xs text-primary/80">
-                        {localized(metric, locale)}
+                      <span key={metric} className="rounded-lg bg-black/40 px-3 py-2 text-xs text-primary/80">
+                        {metric}
                       </span>
                     ))}
                   </div>
@@ -558,9 +547,7 @@ export function HomeView({
               ))}
               {data.experiences.length > featuredExperiences.length ? (
                 <p className="pt-2 text-xs text-gray-500">
-                  {locale === 'zh'
-                    ? `首页精选 ${featuredExperiences.length} 段经历 · 详情页可查看完整信息`
-                    : `Showing ${featuredExperiences.length} featured roles · open a card for details`}
+                  首页精选 {featuredExperiences.length} 段经历 · 详情页可查看完整信息
                 </p>
               ) : null}
             </div>
@@ -574,9 +561,9 @@ export function HomeView({
                   <div className="text-xs text-gray-500">
                     {item.startedAt} — {item.endedAt || copy.common.present}
                   </div>
-                  <h3 className="mt-3 text-xl font-normal text-[#E1E0CC]">{localized(item.school, locale)}</h3>
-                  <div className="mt-1 text-sm text-primary/80">{localized(item.degree, locale)}</div>
-                  {item.notes ? <p className="mt-3 text-sm text-gray-400">{localized(item.notes, locale)}</p> : null}
+                  <h3 className="mt-3 text-xl font-normal text-[#E1E0CC]">{item.school}</h3>
+                  <div className="mt-1 text-sm text-primary/80">{item.degree}</div>
+                  {item.notes ? <p className="mt-3 text-sm text-gray-400">{item.notes}</p> : null}
                 </article>
               ))}
             </div>
@@ -592,12 +579,12 @@ export function HomeView({
           {featuredHonors.map((honor) => (
             <figure key={honor.id || honor.pillar} className="rounded-2xl bg-[#212121] p-6">
               <blockquote className="line-clamp-4 text-sm leading-[1.6] text-primary/80">
-                “{localized(honor.story, locale)}”
+                “{honor.story}”
               </blockquote>
               <figcaption className="mt-6 border-t border-primary/10 pt-5">
-                <div className="text-sm font-semibold text-[#E1E0CC]">{localized(honor.title, locale)}</div>
+                <div className="text-sm font-semibold text-[#E1E0CC]">{honor.title}</div>
                 <div className="mt-1 text-xs text-gray-500">{honor.pillar}</div>
-                <div className="mt-2 text-xs font-semibold tracking-wide text-primary">GUTSYANG</div>
+                <div className="mt-2 text-xs font-semibold tracking-wide text-primary">廖晨扬</div>
               </figcaption>
             </figure>
           ))}
@@ -622,8 +609,8 @@ export function HomeView({
                   <span className="rounded-full border border-primary/10 px-2 py-0.5 text-[11px] text-gray-500">
                     {event.kind}
                   </span>
-                  <h3 className="mt-3 text-lg font-normal text-[#E1E0CC]">{localized(event.title, locale)}</h3>
-                  <p className="mt-2 text-sm text-gray-400">{localized(event.body, locale)}</p>
+                  <h3 className="mt-3 text-lg font-normal text-[#E1E0CC]">{event.title}</h3>
+                  <p className="mt-2 text-sm text-gray-400">{event.body}</p>
                 </div>
               </article>
             ))}
@@ -634,13 +621,7 @@ export function HomeView({
               onClick={() => setTimelineExpanded((value) => !value)}
               className="mt-8 rounded-full border border-primary/20 px-4 py-2 text-sm text-primary/80 transition hover:bg-primary/10"
             >
-              {timelineExpanded
-                ? locale === 'zh'
-                  ? '收起时间线'
-                  : 'Collapse timeline'
-                : locale === 'zh'
-                  ? `展开全部 ${data.timeline.length} 条`
-                  : `Show all ${data.timeline.length} events`}
+              {timelineExpanded ? '收起时间线' : `展开全部 ${data.timeline.length} 条`}
             </button>
           ) : null}
         </div>

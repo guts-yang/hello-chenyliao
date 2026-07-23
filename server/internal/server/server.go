@@ -227,6 +227,7 @@ func (s *Server) Handler() http.Handler {
 		r.Get("/api/admin/timeline", s.handleAdminListTimeline)
 		r.Get("/api/admin/timeline/{id}", s.handleAdminGetTimeline)
 		r.Get("/api/admin/resume", s.handleAdminGetResume)
+		r.Get("/api/admin/visuals", s.handleAdminGetVisuals)
 	})
 
 	r.Group(func(r chi.Router) {
@@ -252,7 +253,7 @@ func (s *Server) Handler() http.Handler {
 		r.Put("/api/admin/timeline/{id}", s.handleAdminUpdateTimeline)
 		r.Delete("/api/admin/timeline/{id}", s.handleAdminDeleteTimeline)
 		r.Put("/api/admin/resume", s.handleAdminPutResume)
-		r.Post("/api/admin/ai/translate", s.handleTranslate)
+		r.Put("/api/admin/visuals", s.handleAdminPutVisuals)
 		r.Post("/api/admin/media/upload-url", s.handleUploadURL)
 		r.Options("/api/admin/media/upload", s.handleUploadOptions)
 		r.Post("/api/admin/media/upload", s.handleUploadPost)
@@ -452,7 +453,6 @@ func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
 	}
 	owner := chatOwner(r.Context())
 	var body struct {
-		Locale    string       `json:"locale"`
 		SessionID string       `json:"sessionId"`
 		Messages  []ai.Message `json:"messages"`
 	}
@@ -470,10 +470,6 @@ func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Empty conversation", http.StatusBadRequest)
 		return
 	}
-	locale := model.LocaleZH
-	if body.Locale == "en" {
-		locale = model.LocaleEN
-	}
 	var sid uuid.UUID
 	if body.SessionID != "" {
 		parsed, err := uuid.Parse(body.SessionID)
@@ -484,7 +480,7 @@ func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
 		sid = parsed
 	}
 	title := chat.SummarizeTitle(lastUserContent(msgs))
-	session, err := s.chat.EnsureSession(r.Context(), owner, sid, title, string(locale))
+	session, err := s.chat.EnsureSession(r.Context(), owner, sid, title, "zh")
 	if err != nil {
 		if errors.Is(err, chat.ErrSessionNotFound) {
 			httpx.WriteClientError(w, http.StatusNotFound, "session not found")
@@ -497,7 +493,7 @@ func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
 		_ = s.chat.AppendMessage(r.Context(), session.ID, "user", u)
 	}
 
-	events, err := s.ai.StreamChat(r.Context(), locale, msgs)
+	events, err := s.ai.StreamChat(r.Context(), msgs)
 	if err != nil {
 		httpx.WriteServerError(w, r, err)
 		return

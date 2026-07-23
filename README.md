@@ -1,18 +1,18 @@
 # gutsyang Personal Site
 
-这是 gutsyang 的双语个人主页 / 作品集，用来展示个人简介、项目作品、实践经历、荣誉与 AI 助手。
+这是廖晨扬的中文单语个人主页 / 作品集，用来展示个人简介、项目作品、实践经历、荣誉与 AI 助手。
 
 架构为「个人站精简版 rainbow」：`config/` + `server/`（Go 模块化单体）+ `web/`（React 18 SPA）+ `utils/`。数据使用 MySQL，缓存/限流使用 Redis，媒体走可替换 ObjectStore（默认本地 `uploads/`，预留 S3）。
 
 ## 核心功能
 
 - Aura 风格深色电影感首页：Profile、项目、经历、荣誉、教育和时间线集中展示。
-- Prisma 暖奶油色视觉系统：黑色电影感背景、Almarai / Instrument Serif、pull-up 与滚动字符动画。
-- 项目 / 经历详情页：支持双语内容、目录、前后导航；SPA 动态更新 document title/meta（社交抓虫见下方说明）。
+- Prisma 暖奶油色视觉系统：黑色电影感背景、Noto Sans SC 与动效。
+- 项目 / 经历详情页：中文内容、目录、前后导航；SPA 动态更新 document title/meta（社交抓虫见下方说明）。
 - AI 助手：访客可用自然语言询问 profile、projects、experiences 和 resume；会话持久化到 MySQL（无 DB 时内存回退）。
-- 完整 `/admin` 管理后台：登录、Dashboard、Profile / Projects / Experiences / Honors / Education / Timeline、简历 PDF、媒体上传、账户与会话、审计日志；写操作使用 Session Cookie + `X-CSRF-Token`。
+- 完整 `/admin` 管理后台：登录、Dashboard、Profile / Projects / Experiences / Honors / Education / Timeline、简历 PDF、媒体上传、`/admin/visuals` 站点插图、账户与会话、审计日志；写操作使用 Session Cookie + `X-CSRF-Token`。
 - 公开联系方式仅保留 GitHub；简历通过 `/api/resume.pdf` 重定向到后台配置的资源。
-- 国际化：`/zh` 与 `/en` 双语路由。
+- 公开站为中文单语：`/`、`/projects/:slug`、`/experience/:slug`；旧 `/zh`、`/en` 路径会兼容跳转。
 
 ## 技术栈
 
@@ -35,7 +35,7 @@ server/
   internal/                # auth / content / chat / ai / media / server ...
   migrations/              # embed 用 SQL
 web/
-  src/                     # React SPA（页面、组件、hooks、i18n）
+  src/                     # React SPA（页面、组件、hooks、中文文案）
 utils/                     # 无业务耦合的通用工具
 ```
 
@@ -59,7 +59,7 @@ cd server && go run ./cmd/server
 npm run dev
 ```
 
-打开 <http://localhost:5173>，会跳转到带 locale 的首页。管理后台：<http://localhost:5173/admin/login>。
+打开 <http://localhost:5173> 即可访问首页。管理后台：<http://localhost:5173/admin/login>；首页视频与图标在 <http://localhost:5173/admin/visuals> 管理。
 
 ### 首次管理员登录
 

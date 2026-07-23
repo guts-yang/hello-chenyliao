@@ -20,14 +20,17 @@ func TestSeedAndHome(t *testing.T) {
 	if home.Profile.Handle != "gutsyang" {
 		t.Fatalf("handle=%q", home.Profile.Handle)
 	}
-	if home.Profile.NameEN != "Tony Liao" {
-		t.Fatalf("nameEn=%q", home.Profile.NameEN)
+	if home.Profile.Name != "廖晨扬" {
+		t.Fatalf("name=%q", home.Profile.Name)
 	}
 	if len(home.Projects) == 0 {
 		t.Fatal("expected seeded projects")
 	}
 	if len(home.Experiences) < 4 {
 		t.Fatalf("expected enriched experiences, got %d", len(home.Experiences))
+	}
+	if home.Visuals.HeroVideoURL == "" {
+		t.Fatal("expected default visuals")
 	}
 	p, err := svc.ProjectBySlug(context.Background(), "llm-hessian-unlearning")
 	if err != nil {
@@ -43,7 +46,7 @@ func TestSearchProjects(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	hits, err := svc.SearchProjects(context.Background(), "langgraph", 4)
+	hits, err := svc.SearchProjects(context.Background(), "多智能体", 4)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,8 +63,8 @@ func TestEducationTimelineResumeCRUD(t *testing.T) {
 	ctx := context.Background()
 
 	edu, err := svc.UpsertEducation(ctx, model.Education{
-		School:       model.LocalizedString{ZH: "测试大学", EN: "Test University"},
-		Degree:       model.LocalizedString{ZH: "本科", EN: "Bachelor"},
+		School:       "测试大学",
+		Degree:       "本科",
 		StartedAt:    "2020-09",
 		DisplayOrder: 1,
 	})
@@ -69,7 +72,7 @@ func TestEducationTimelineResumeCRUD(t *testing.T) {
 		t.Fatal(err)
 	}
 	got, err := svc.EducationByID(ctx, edu.ID)
-	if err != nil || got.School.EN != "Test University" {
+	if err != nil || got.School != "测试大学" {
 		t.Fatalf("education get: %v %+v", err, got)
 	}
 	if err := svc.DeleteEducation(ctx, edu.ID); err != nil {
@@ -79,8 +82,8 @@ func TestEducationTimelineResumeCRUD(t *testing.T) {
 	item, err := svc.UpsertTimeline(ctx, model.TimelineEvent{
 		Date:  "2026-01",
 		Kind:  "work",
-		Title: model.LocalizedString{ZH: "事件", EN: "Event"},
-		Body:  model.LocalizedString{ZH: "说明", EN: "Body"},
+		Title: "事件",
+		Body:  "说明",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -100,6 +103,14 @@ func TestEducationTimelineResumeCRUD(t *testing.T) {
 	resume, err = svc.Resume(ctx)
 	if err != nil || resume.URL != "/uploads/resume/tony.pdf" {
 		t.Fatalf("resume get: %v %+v", err, resume)
+	}
+	visuals, err := svc.SetVisuals(ctx, model.VisualSettings{HeroVideoURL: "/uploads/hero.mp4"})
+	if err != nil || visuals.HeroVideoURL != "/uploads/hero.mp4" {
+		t.Fatalf("visuals set: %v %+v", err, visuals)
+	}
+	visuals, err = svc.Visuals(ctx)
+	if err != nil || visuals.HeroVideoURL != "/uploads/hero.mp4" {
+		t.Fatalf("visuals get: %v %+v", err, visuals)
 	}
 	stats, err := svc.Stats(ctx)
 	if err != nil || stats["resume"] != 1 {

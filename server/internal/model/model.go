@@ -2,18 +2,6 @@ package model
 
 import "time"
 
-type Locale string
-
-const (
-	LocaleZH Locale = "zh"
-	LocaleEN Locale = "en"
-)
-
-type LocalizedString struct {
-	ZH string `json:"zh"`
-	EN string `json:"en"`
-}
-
 type SocialLink struct {
 	Type  string `json:"type"`
 	Href  string `json:"href"`
@@ -21,75 +9,83 @@ type SocialLink struct {
 }
 
 type Project struct {
-	ID           string            `json:"id"`
-	Slug         string            `json:"slug"`
-	Kind         string            `json:"kind"`
-	Title        LocalizedString   `json:"title"`
-	Tagline      LocalizedString   `json:"tagline"`
-	Summary      LocalizedString   `json:"summary"`
-	Tags         []string          `json:"tags"`
-	Highlights   []LocalizedString `json:"highlights"`
-	Link         string            `json:"link,omitempty"`
-	Repo         string            `json:"repo,omitempty"`
-	CoverURL     string            `json:"coverUrl,omitempty"`
-	StartedAt    string            `json:"startedAt"`
-	EndedAt      string            `json:"endedAt,omitempty"`
-	DisplayOrder int               `json:"displayOrder"`
-	IsPublished  bool              `json:"isPublished"`
+	ID           string   `json:"id"`
+	Slug         string   `json:"slug"`
+	Kind         string   `json:"kind"`
+	Title        string   `json:"title"`
+	Tagline      string   `json:"tagline"`
+	Summary      string   `json:"summary"`
+	Tags         []string `json:"tags"`
+	Highlights   []string `json:"highlights"`
+	Link         string   `json:"link,omitempty"`
+	Repo         string   `json:"repo,omitempty"`
+	CoverURL     string   `json:"coverUrl,omitempty"`
+	StartedAt    string   `json:"startedAt"`
+	EndedAt      string   `json:"endedAt,omitempty"`
+	DisplayOrder int      `json:"displayOrder"`
+	IsPublished  bool     `json:"isPublished"`
 }
 
 type Experience struct {
-	ID           string            `json:"id"`
-	Slug         string            `json:"slug"`
-	Org          LocalizedString   `json:"org"`
-	Role         LocalizedString   `json:"role"`
-	Summary      LocalizedString   `json:"summary"`
-	Metrics      []LocalizedString `json:"metrics"`
-	Link         string            `json:"link,omitempty"`
-	StartedAt    string            `json:"startedAt"`
-	EndedAt      string            `json:"endedAt,omitempty"`
-	DisplayOrder int               `json:"displayOrder"`
-	IsPublished  bool              `json:"isPublished"`
+	ID           string   `json:"id"`
+	Slug         string   `json:"slug"`
+	Org          string   `json:"org"`
+	Role         string   `json:"role"`
+	Summary      string   `json:"summary"`
+	Metrics      []string `json:"metrics"`
+	Link         string   `json:"link,omitempty"`
+	StartedAt    string   `json:"startedAt"`
+	EndedAt      string   `json:"endedAt,omitempty"`
+	DisplayOrder int      `json:"displayOrder"`
+	IsPublished  bool     `json:"isPublished"`
 }
 
 type Honor struct {
-	ID           string          `json:"id"`
-	Pillar       string          `json:"pillar"`
-	Title        LocalizedString `json:"title"`
-	Story        LocalizedString `json:"story"`
-	DisplayOrder int             `json:"displayOrder"`
-	IsPublished  bool            `json:"isPublished"`
+	ID           string `json:"id"`
+	Pillar       string `json:"pillar"`
+	Title        string `json:"title"`
+	Story        string `json:"story"`
+	DisplayOrder int    `json:"displayOrder"`
+	IsPublished  bool   `json:"isPublished"`
 }
 
 type Education struct {
-	ID           string          `json:"id"`
-	School       LocalizedString `json:"school"`
-	Degree       LocalizedString `json:"degree"`
-	Notes        LocalizedString `json:"notes,omitempty"`
-	StartedAt    string          `json:"startedAt"`
-	EndedAt      string          `json:"endedAt,omitempty"`
-	DisplayOrder int             `json:"displayOrder"`
+	ID           string `json:"id"`
+	School       string `json:"school"`
+	Degree       string `json:"degree"`
+	Notes        string `json:"notes,omitempty"`
+	StartedAt    string `json:"startedAt"`
+	EndedAt      string `json:"endedAt,omitempty"`
+	DisplayOrder int    `json:"displayOrder"`
 }
 
 type TimelineEvent struct {
-	ID    string          `json:"id"`
-	Date  string          `json:"date"`
-	Kind  string          `json:"kind"`
-	Title LocalizedString `json:"title"`
-	Body  LocalizedString `json:"body"`
+	ID    string `json:"id"`
+	Date  string `json:"date"`
+	Kind  string `json:"kind"`
+	Title string `json:"title"`
+	Body  string `json:"body"`
 }
 
 type Profile struct {
-	ID        string          `json:"id"`
-	NameZH    string          `json:"nameZh"`
-	NameEN    string          `json:"nameEn"`
-	Handle    string          `json:"handle"`
-	Role      LocalizedString `json:"role"`
-	Slogan    LocalizedString `json:"slogan"`
-	Bio       LocalizedString `json:"bio"`
-	AvatarURL string          `json:"avatarUrl,omitempty"`
-	Socials   []SocialLink    `json:"socials"`
-	UpdatedAt time.Time       `json:"updatedAt"`
+	ID        string       `json:"id"`
+	Name      string       `json:"name"`
+	Handle    string       `json:"handle"`
+	Role      string       `json:"role"`
+	Slogan    string       `json:"slogan"`
+	Bio       string       `json:"bio"`
+	AvatarURL string       `json:"avatarUrl,omitempty"`
+	Socials   []SocialLink `json:"socials"`
+	UpdatedAt time.Time    `json:"updatedAt"`
+}
+
+type VisualSettings struct {
+	HeroVideoURL           string    `json:"heroVideoUrl"`
+	FeatureVideoURL        string    `json:"featureVideoUrl"`
+	FeatureIconProjects    string    `json:"featureIconProjects"`
+	FeatureIconExperience  string    `json:"featureIconExperience"`
+	FeatureIconEducation   string    `json:"featureIconEducation"`
+	UpdatedAt              time.Time `json:"updatedAt,omitempty"`
 }
 
 type HomeContent struct {
@@ -99,6 +95,7 @@ type HomeContent struct {
 	Honors      []Honor         `json:"honors"`
 	Education   []Education     `json:"education"`
 	Timeline    []TimelineEvent `json:"timeline"`
+	Visuals     VisualSettings  `json:"visuals"`
 }
 
 type ContentSnapshot struct {
@@ -108,6 +105,7 @@ type ContentSnapshot struct {
 	Honors      []Honor         `json:"honors"`
 	Education   []Education     `json:"education"`
 	Timeline    []TimelineEvent `json:"timeline"`
+	Visuals     VisualSettings  `json:"visuals,omitempty"`
 }
 
 type User struct {

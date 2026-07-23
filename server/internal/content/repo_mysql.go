@@ -86,13 +86,9 @@ func (r *mysqlRepo) ImportSnapshot(ctx context.Context, snap model.ContentSnapsh
 		socials = []byte("[]")
 	}
 	if _, err := tx.ExecContext(ctx, `
-		INSERT INTO profile (id, name_zh, name_en, handle, role_zh, role_en, slogan_zh, slogan_en,
-			bio_zh, bio_en, avatar_url, socials, updated_at)
-		VALUES ('main',?,?,?,?,?,?,?,?,?,?,?,?)`,
-		snap.Profile.NameZH, snap.Profile.NameEN, snap.Profile.Handle,
-		snap.Profile.Role.ZH, snap.Profile.Role.EN,
-		snap.Profile.Slogan.ZH, snap.Profile.Slogan.EN,
-		snap.Profile.Bio.ZH, snap.Profile.Bio.EN,
+		INSERT INTO profile (id, name, handle, role, slogan, bio, avatar_url, socials, updated_at)
+		VALUES ('main',?,?,?,?,?,?,?,?)`,
+		snap.Profile.Name, snap.Profile.Handle, snap.Profile.Role, snap.Profile.Slogan, snap.Profile.Bio,
 		nullStr(snap.Profile.AvatarURL), socials, time.Now().UTC(),
 	); err != nil {
 		return err
@@ -114,11 +110,9 @@ func (r *mysqlRepo) ImportSnapshot(ctx context.Context, snap model.ContentSnapsh
 	}
 	for _, e := range snap.Education {
 		if _, err := tx.ExecContext(ctx, `
-			INSERT INTO education (id, school_zh, school_en, degree_zh, degree_en, notes_zh, notes_en,
-				started_at, ended_at, display_order)
-			VALUES (?,?,?,?,?,?,?,?,?,?)`,
-			e.ID, e.School.ZH, e.School.EN, e.Degree.ZH, e.Degree.EN,
-			nullStr(e.Notes.ZH), nullStr(e.Notes.EN),
+			INSERT INTO education (id, school, degree, notes, started_at, ended_at, display_order)
+			VALUES (?,?,?,?,?,?,?)`,
+			e.ID, e.School, e.Degree, nullStr(e.Notes),
 			parseDate(e.StartedAt), parseDatePtr(e.EndedAt), e.DisplayOrder,
 		); err != nil {
 			return err
@@ -126,9 +120,9 @@ func (r *mysqlRepo) ImportSnapshot(ctx context.Context, snap model.ContentSnapsh
 	}
 	for _, t := range snap.Timeline {
 		if _, err := tx.ExecContext(ctx, `
-			INSERT INTO timeline (id, date, kind, title_zh, title_en, body_zh, body_en)
-			VALUES (?,?,?,?,?,?,?)`,
-			t.ID, parseDate(t.Date), t.Kind, t.Title.ZH, t.Title.EN, t.Body.ZH, t.Body.EN,
+			INSERT INTO timeline (id, date, kind, title, body)
+			VALUES (?,?,?,?,?)`,
+			t.ID, parseDate(t.Date), t.Kind, t.Title, t.Body,
 		); err != nil {
 			return err
 		}
@@ -138,13 +132,11 @@ func (r *mysqlRepo) ImportSnapshot(ctx context.Context, snap model.ContentSnapsh
 
 func (r *mysqlRepo) Profile(ctx context.Context) (model.Profile, error) {
 	row := r.db.QueryRowContext(ctx, `
-		SELECT id, name_zh, name_en, handle, role_zh, role_en, slogan_zh, slogan_en,
-		       bio_zh, bio_en, COALESCE(avatar_url,''), socials, updated_at FROM profile WHERE id='main'`)
+		SELECT id, name, handle, role, slogan, bio, COALESCE(avatar_url,''), socials, updated_at
+		FROM profile WHERE id='main'`)
 	var p model.Profile
 	var socials []byte
-	if err := row.Scan(&p.ID, &p.NameZH, &p.NameEN, &p.Handle,
-		&p.Role.ZH, &p.Role.EN, &p.Slogan.ZH, &p.Slogan.EN,
-		&p.Bio.ZH, &p.Bio.EN, &p.AvatarURL, &socials, &p.UpdatedAt); err != nil {
+	if err := row.Scan(&p.ID, &p.Name, &p.Handle, &p.Role, &p.Slogan, &p.Bio, &p.AvatarURL, &socials, &p.UpdatedAt); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return p, ErrNotFound
 		}
@@ -161,11 +153,9 @@ func (r *mysqlRepo) UpdateProfile(ctx context.Context, next model.Profile) (mode
 	socials, _ := json.Marshal(next.Socials)
 	next.UpdatedAt = time.Now().UTC()
 	_, err := r.db.ExecContext(ctx, `
-		UPDATE profile SET name_zh=?, name_en=?, handle=?, role_zh=?, role_en=?,
-			slogan_zh=?, slogan_en=?, bio_zh=?, bio_en=?, avatar_url=?, socials=?, updated_at=?
+		UPDATE profile SET name=?, handle=?, role=?, slogan=?, bio=?, avatar_url=?, socials=?, updated_at=?
 		WHERE id='main'`,
-		next.NameZH, next.NameEN, next.Handle, next.Role.ZH, next.Role.EN,
-		next.Slogan.ZH, next.Slogan.EN, next.Bio.ZH, next.Bio.EN,
+		next.Name, next.Handle, next.Role, next.Slogan, next.Bio,
 		nullStr(next.AvatarURL), socials, next.UpdatedAt)
 	if err != nil {
 		return next, err
@@ -175,8 +165,8 @@ func (r *mysqlRepo) UpdateProfile(ctx context.Context, next model.Profile) (mode
 }
 
 func (r *mysqlRepo) Projects(ctx context.Context, includeDrafts bool) ([]model.Project, error) {
-	q := `SELECT id, slug, kind, title_zh, title_en, tagline_zh, tagline_en, summary_zh, summary_en,
-		tags, highlights, COALESCE(link,''), COALESCE(repo,''), COALESCE(cover_url,''),
+	q := `SELECT id, slug, kind, title, tagline, summary, tags, highlights,
+		COALESCE(link,''), COALESCE(repo,''), COALESCE(cover_url,''),
 		DATE_FORMAT(started_at,'%Y-%m'), IFNULL(DATE_FORMAT(ended_at,'%Y-%m'),''),
 		display_order, is_published FROM projects`
 	if !includeDrafts {
@@ -201,8 +191,8 @@ func (r *mysqlRepo) Projects(ctx context.Context, includeDrafts bool) ([]model.P
 
 func (r *mysqlRepo) ProjectBySlug(ctx context.Context, slug string) (*model.Project, error) {
 	row := r.db.QueryRowContext(ctx, `
-		SELECT id, slug, kind, title_zh, title_en, tagline_zh, tagline_en, summary_zh, summary_en,
-		tags, highlights, COALESCE(link,''), COALESCE(repo,''), COALESCE(cover_url,''),
+		SELECT id, slug, kind, title, tagline, summary, tags, highlights,
+		COALESCE(link,''), COALESCE(repo,''), COALESCE(cover_url,''),
 		DATE_FORMAT(started_at,'%Y-%m'), IFNULL(DATE_FORMAT(ended_at,'%Y-%m'),''),
 		display_order, is_published FROM projects WHERE slug=?`, slug)
 	p, err := scanProject(row)
@@ -217,8 +207,8 @@ func (r *mysqlRepo) ProjectBySlug(ctx context.Context, slug string) (*model.Proj
 
 func (r *mysqlRepo) ProjectByID(ctx context.Context, id string) (*model.Project, error) {
 	row := r.db.QueryRowContext(ctx, `
-		SELECT id, slug, kind, title_zh, title_en, tagline_zh, tagline_en, summary_zh, summary_en,
-		tags, highlights, COALESCE(link,''), COALESCE(repo,''), COALESCE(cover_url,''),
+		SELECT id, slug, kind, title, tagline, summary, tags, highlights,
+		COALESCE(link,''), COALESCE(repo,''), COALESCE(cover_url,''),
 		DATE_FORMAT(started_at,'%Y-%m'), IFNULL(DATE_FORMAT(ended_at,'%Y-%m'),''),
 		display_order, is_published FROM projects WHERE id=?`, id)
 	p, err := scanProject(row)
@@ -247,8 +237,8 @@ func (r *mysqlRepo) DeleteProject(ctx context.Context, id string) error {
 }
 
 func (r *mysqlRepo) Experiences(ctx context.Context, includeDrafts bool) ([]model.Experience, error) {
-	q := `SELECT id, slug, org_zh, org_en, role_zh, role_en, summary_zh, summary_en, metrics,
-		COALESCE(link,''), DATE_FORMAT(started_at,'%Y-%m'), IFNULL(DATE_FORMAT(ended_at,'%Y-%m'),''),
+	q := `SELECT id, slug, org, role, summary, metrics, COALESCE(link,''),
+		DATE_FORMAT(started_at,'%Y-%m'), IFNULL(DATE_FORMAT(ended_at,'%Y-%m'),''),
 		display_order, is_published FROM experiences`
 	if !includeDrafts {
 		q += ` WHERE is_published=1`
@@ -272,8 +262,8 @@ func (r *mysqlRepo) Experiences(ctx context.Context, includeDrafts bool) ([]mode
 
 func (r *mysqlRepo) ExperienceBySlug(ctx context.Context, slug string) (*model.Experience, error) {
 	row := r.db.QueryRowContext(ctx, `
-		SELECT id, slug, org_zh, org_en, role_zh, role_en, summary_zh, summary_en, metrics,
-		COALESCE(link,''), DATE_FORMAT(started_at,'%Y-%m'), IFNULL(DATE_FORMAT(ended_at,'%Y-%m'),''),
+		SELECT id, slug, org, role, summary, metrics, COALESCE(link,''),
+		DATE_FORMAT(started_at,'%Y-%m'), IFNULL(DATE_FORMAT(ended_at,'%Y-%m'),''),
 		display_order, is_published FROM experiences WHERE slug=?`, slug)
 	e, err := scanExperience(row)
 	if err != nil {
@@ -287,8 +277,8 @@ func (r *mysqlRepo) ExperienceBySlug(ctx context.Context, slug string) (*model.E
 
 func (r *mysqlRepo) ExperienceByID(ctx context.Context, id string) (*model.Experience, error) {
 	row := r.db.QueryRowContext(ctx, `
-		SELECT id, slug, org_zh, org_en, role_zh, role_en, summary_zh, summary_en, metrics,
-		COALESCE(link,''), DATE_FORMAT(started_at,'%Y-%m'), IFNULL(DATE_FORMAT(ended_at,'%Y-%m'),''),
+		SELECT id, slug, org, role, summary, metrics, COALESCE(link,''),
+		DATE_FORMAT(started_at,'%Y-%m'), IFNULL(DATE_FORMAT(ended_at,'%Y-%m'),''),
 		display_order, is_published FROM experiences WHERE id=?`, id)
 	e, err := scanExperience(row)
 	if err != nil {
@@ -316,7 +306,7 @@ func (r *mysqlRepo) DeleteExperience(ctx context.Context, id string) error {
 }
 
 func (r *mysqlRepo) Honors(ctx context.Context, includeDrafts bool) ([]model.Honor, error) {
-	q := `SELECT id, pillar, title_zh, title_en, story_zh, story_en, display_order, is_published FROM honors`
+	q := `SELECT id, pillar, title, story, display_order, is_published FROM honors`
 	if !includeDrafts {
 		q += ` WHERE is_published=1`
 	}
@@ -339,8 +329,7 @@ func (r *mysqlRepo) Honors(ctx context.Context, includeDrafts bool) ([]model.Hon
 
 func (r *mysqlRepo) HonorByID(ctx context.Context, id string) (*model.Honor, error) {
 	row := r.db.QueryRowContext(ctx, `
-		SELECT id, pillar, title_zh, title_en, story_zh, story_en, display_order, is_published
-		FROM honors WHERE id=?`, id)
+		SELECT id, pillar, title, story, display_order, is_published FROM honors WHERE id=?`, id)
 	h, err := scanHonor(row)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -368,7 +357,7 @@ func (r *mysqlRepo) DeleteHonor(ctx context.Context, id string) error {
 
 func (r *mysqlRepo) Education(ctx context.Context) ([]model.Education, error) {
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT id, school_zh, school_en, degree_zh, degree_en, COALESCE(notes_zh,''), COALESCE(notes_en,''),
+		SELECT id, school, degree, COALESCE(notes,''),
 		DATE_FORMAT(started_at,'%Y-%m'), IFNULL(DATE_FORMAT(ended_at,'%Y-%m'),''), display_order
 		FROM education ORDER BY display_order DESC`)
 	if err != nil {
@@ -378,8 +367,7 @@ func (r *mysqlRepo) Education(ctx context.Context) ([]model.Education, error) {
 	var out []model.Education
 	for rows.Next() {
 		var e model.Education
-		if err := rows.Scan(&e.ID, &e.School.ZH, &e.School.EN, &e.Degree.ZH, &e.Degree.EN,
-			&e.Notes.ZH, &e.Notes.EN, &e.StartedAt, &e.EndedAt, &e.DisplayOrder); err != nil {
+		if err := rows.Scan(&e.ID, &e.School, &e.Degree, &e.Notes, &e.StartedAt, &e.EndedAt, &e.DisplayOrder); err != nil {
 			return nil, err
 		}
 		out = append(out, e)
@@ -389,12 +377,11 @@ func (r *mysqlRepo) Education(ctx context.Context) ([]model.Education, error) {
 
 func (r *mysqlRepo) EducationByID(ctx context.Context, id string) (*model.Education, error) {
 	row := r.db.QueryRowContext(ctx, `
-		SELECT id, school_zh, school_en, degree_zh, degree_en, COALESCE(notes_zh,''), COALESCE(notes_en,''),
+		SELECT id, school, degree, COALESCE(notes,''),
 		DATE_FORMAT(started_at,'%Y-%m'), IFNULL(DATE_FORMAT(ended_at,'%Y-%m'),''), display_order
 		FROM education WHERE id=?`, id)
 	var e model.Education
-	if err := row.Scan(&e.ID, &e.School.ZH, &e.School.EN, &e.Degree.ZH, &e.Degree.EN,
-		&e.Notes.ZH, &e.Notes.EN, &e.StartedAt, &e.EndedAt, &e.DisplayOrder); err != nil {
+	if err := row.Scan(&e.ID, &e.School, &e.Degree, &e.Notes, &e.StartedAt, &e.EndedAt, &e.DisplayOrder); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNotFound
 		}
@@ -405,15 +392,11 @@ func (r *mysqlRepo) EducationByID(ctx context.Context, id string) (*model.Educat
 
 func (r *mysqlRepo) UpsertEducation(ctx context.Context, e model.Education) (model.Education, error) {
 	_, err := r.db.ExecContext(ctx, `
-		INSERT INTO education (id, school_zh, school_en, degree_zh, degree_en, notes_zh, notes_en,
-			started_at, ended_at, display_order)
-		VALUES (?,?,?,?,?,?,?,?,?,?)
-		ON DUPLICATE KEY UPDATE school_zh=VALUES(school_zh), school_en=VALUES(school_en),
-			degree_zh=VALUES(degree_zh), degree_en=VALUES(degree_en), notes_zh=VALUES(notes_zh),
-			notes_en=VALUES(notes_en), started_at=VALUES(started_at), ended_at=VALUES(ended_at),
-			display_order=VALUES(display_order)`,
-		e.ID, e.School.ZH, e.School.EN, e.Degree.ZH, e.Degree.EN,
-		nullStr(e.Notes.ZH), nullStr(e.Notes.EN),
+		INSERT INTO education (id, school, degree, notes, started_at, ended_at, display_order)
+		VALUES (?,?,?,?,?,?,?)
+		ON DUPLICATE KEY UPDATE school=VALUES(school), degree=VALUES(degree), notes=VALUES(notes),
+			started_at=VALUES(started_at), ended_at=VALUES(ended_at), display_order=VALUES(display_order)`,
+		e.ID, e.School, e.Degree, nullStr(e.Notes),
 		parseDate(e.StartedAt), parseDatePtr(e.EndedAt), e.DisplayOrder)
 	return e, err
 }
@@ -431,8 +414,7 @@ func (r *mysqlRepo) DeleteEducation(ctx context.Context, id string) error {
 
 func (r *mysqlRepo) Timeline(ctx context.Context) ([]model.TimelineEvent, error) {
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT id, DATE_FORMAT(date,'%Y-%m'), kind, title_zh, title_en, body_zh, body_en
-		FROM timeline ORDER BY date ASC`)
+		SELECT id, DATE_FORMAT(date,'%Y-%m'), kind, title, body FROM timeline ORDER BY date ASC`)
 	if err != nil {
 		return nil, err
 	}
@@ -440,7 +422,7 @@ func (r *mysqlRepo) Timeline(ctx context.Context) ([]model.TimelineEvent, error)
 	var out []model.TimelineEvent
 	for rows.Next() {
 		var t model.TimelineEvent
-		if err := rows.Scan(&t.ID, &t.Date, &t.Kind, &t.Title.ZH, &t.Title.EN, &t.Body.ZH, &t.Body.EN); err != nil {
+		if err := rows.Scan(&t.ID, &t.Date, &t.Kind, &t.Title, &t.Body); err != nil {
 			return nil, err
 		}
 		out = append(out, t)
@@ -450,10 +432,9 @@ func (r *mysqlRepo) Timeline(ctx context.Context) ([]model.TimelineEvent, error)
 
 func (r *mysqlRepo) TimelineByID(ctx context.Context, id string) (*model.TimelineEvent, error) {
 	row := r.db.QueryRowContext(ctx, `
-		SELECT id, DATE_FORMAT(date,'%Y-%m'), kind, title_zh, title_en, body_zh, body_en
-		FROM timeline WHERE id=?`, id)
+		SELECT id, DATE_FORMAT(date,'%Y-%m'), kind, title, body FROM timeline WHERE id=?`, id)
 	var t model.TimelineEvent
-	if err := row.Scan(&t.ID, &t.Date, &t.Kind, &t.Title.ZH, &t.Title.EN, &t.Body.ZH, &t.Body.EN); err != nil {
+	if err := row.Scan(&t.ID, &t.Date, &t.Kind, &t.Title, &t.Body); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNotFound
 		}
@@ -464,11 +445,10 @@ func (r *mysqlRepo) TimelineByID(ctx context.Context, id string) (*model.Timelin
 
 func (r *mysqlRepo) UpsertTimeline(ctx context.Context, t model.TimelineEvent) (model.TimelineEvent, error) {
 	_, err := r.db.ExecContext(ctx, `
-		INSERT INTO timeline (id, date, kind, title_zh, title_en, body_zh, body_en)
-		VALUES (?,?,?,?,?,?,?)
-		ON DUPLICATE KEY UPDATE date=VALUES(date), kind=VALUES(kind), title_zh=VALUES(title_zh),
-			title_en=VALUES(title_en), body_zh=VALUES(body_zh), body_en=VALUES(body_en)`,
-		t.ID, parseDate(t.Date), t.Kind, t.Title.ZH, t.Title.EN, t.Body.ZH, t.Body.EN)
+		INSERT INTO timeline (id, date, kind, title, body)
+		VALUES (?,?,?,?,?)
+		ON DUPLICATE KEY UPDATE date=VALUES(date), kind=VALUES(kind), title=VALUES(title), body=VALUES(body)`,
+		t.ID, parseDate(t.Date), t.Kind, t.Title, t.Body)
 	return t, err
 }
 
@@ -518,15 +498,15 @@ func upsertProjectTx(ctx context.Context, ex execer, p model.Project) error {
 		highlights = []byte("[]")
 	}
 	_, err := ex.ExecContext(ctx, `
-		INSERT INTO projects (id, slug, kind, title_zh, title_en, tagline_zh, tagline_en, summary_zh, summary_en,
-			tags, highlights, link, repo, cover_url, started_at, ended_at, display_order, is_published)
-		VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-		ON DUPLICATE KEY UPDATE slug=VALUES(slug), kind=VALUES(kind), title_zh=VALUES(title_zh), title_en=VALUES(title_en),
-			tagline_zh=VALUES(tagline_zh), tagline_en=VALUES(tagline_en), summary_zh=VALUES(summary_zh), summary_en=VALUES(summary_en),
-			tags=VALUES(tags), highlights=VALUES(highlights), link=VALUES(link), repo=VALUES(repo), cover_url=VALUES(cover_url),
-			started_at=VALUES(started_at), ended_at=VALUES(ended_at), display_order=VALUES(display_order), is_published=VALUES(is_published)`,
-		p.ID, p.Slug, p.Kind, p.Title.ZH, p.Title.EN, p.Tagline.ZH, p.Tagline.EN, p.Summary.ZH, p.Summary.EN,
-		tags, highlights, nullStr(p.Link), nullStr(p.Repo), nullStr(p.CoverURL),
+		INSERT INTO projects (id, slug, kind, title, tagline, summary, tags, highlights,
+			link, repo, cover_url, started_at, ended_at, display_order, is_published)
+		VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+		ON DUPLICATE KEY UPDATE slug=VALUES(slug), kind=VALUES(kind), title=VALUES(title),
+			tagline=VALUES(tagline), summary=VALUES(summary), tags=VALUES(tags), highlights=VALUES(highlights),
+			link=VALUES(link), repo=VALUES(repo), cover_url=VALUES(cover_url), started_at=VALUES(started_at),
+			ended_at=VALUES(ended_at), display_order=VALUES(display_order), is_published=VALUES(is_published)`,
+		p.ID, p.Slug, p.Kind, p.Title, p.Tagline, p.Summary, tags, highlights,
+		nullStr(p.Link), nullStr(p.Repo), nullStr(p.CoverURL),
 		parseDate(p.StartedAt), parseDatePtr(p.EndedAt), p.DisplayOrder, p.IsPublished)
 	return err
 }
@@ -537,26 +517,23 @@ func upsertExperienceTx(ctx context.Context, ex execer, e model.Experience) erro
 		metrics = []byte("[]")
 	}
 	_, err := ex.ExecContext(ctx, `
-		INSERT INTO experiences (id, slug, org_zh, org_en, role_zh, role_en, summary_zh, summary_en,
-			metrics, link, started_at, ended_at, display_order, is_published)
-		VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-		ON DUPLICATE KEY UPDATE slug=VALUES(slug), org_zh=VALUES(org_zh), org_en=VALUES(org_en),
-			role_zh=VALUES(role_zh), role_en=VALUES(role_en), summary_zh=VALUES(summary_zh), summary_en=VALUES(summary_en),
+		INSERT INTO experiences (id, slug, org, role, summary, metrics, link, started_at, ended_at, display_order, is_published)
+		VALUES (?,?,?,?,?,?,?,?,?,?,?)
+		ON DUPLICATE KEY UPDATE slug=VALUES(slug), org=VALUES(org), role=VALUES(role), summary=VALUES(summary),
 			metrics=VALUES(metrics), link=VALUES(link), started_at=VALUES(started_at), ended_at=VALUES(ended_at),
 			display_order=VALUES(display_order), is_published=VALUES(is_published)`,
-		e.ID, e.Slug, e.Org.ZH, e.Org.EN, e.Role.ZH, e.Role.EN, e.Summary.ZH, e.Summary.EN,
-		metrics, nullStr(e.Link), parseDate(e.StartedAt), parseDatePtr(e.EndedAt), e.DisplayOrder, e.IsPublished)
+		e.ID, e.Slug, e.Org, e.Role, e.Summary, metrics, nullStr(e.Link),
+		parseDate(e.StartedAt), parseDatePtr(e.EndedAt), e.DisplayOrder, e.IsPublished)
 	return err
 }
 
 func upsertHonorTx(ctx context.Context, ex execer, h model.Honor) error {
 	_, err := ex.ExecContext(ctx, `
-		INSERT INTO honors (id, pillar, title_zh, title_en, story_zh, story_en, display_order, is_published)
-		VALUES (?,?,?,?,?,?,?,?)
-		ON DUPLICATE KEY UPDATE pillar=VALUES(pillar), title_zh=VALUES(title_zh), title_en=VALUES(title_en),
-			story_zh=VALUES(story_zh), story_en=VALUES(story_en), display_order=VALUES(display_order),
-			is_published=VALUES(is_published)`,
-		h.ID, h.Pillar, h.Title.ZH, h.Title.EN, h.Story.ZH, h.Story.EN, h.DisplayOrder, h.IsPublished)
+		INSERT INTO honors (id, pillar, title, story, display_order, is_published)
+		VALUES (?,?,?,?,?,?)
+		ON DUPLICATE KEY UPDATE pillar=VALUES(pillar), title=VALUES(title), story=VALUES(story),
+			display_order=VALUES(display_order), is_published=VALUES(is_published)`,
+		h.ID, h.Pillar, h.Title, h.Story, h.DisplayOrder, h.IsPublished)
 	return err
 }
 
@@ -564,9 +541,8 @@ func scanProject(row scanner) (model.Project, error) {
 	var p model.Project
 	var tags, highlights []byte
 	var published int
-	if err := row.Scan(&p.ID, &p.Slug, &p.Kind, &p.Title.ZH, &p.Title.EN, &p.Tagline.ZH, &p.Tagline.EN,
-		&p.Summary.ZH, &p.Summary.EN, &tags, &highlights, &p.Link, &p.Repo, &p.CoverURL,
-		&p.StartedAt, &p.EndedAt, &p.DisplayOrder, &published); err != nil {
+	if err := row.Scan(&p.ID, &p.Slug, &p.Kind, &p.Title, &p.Tagline, &p.Summary, &tags, &highlights,
+		&p.Link, &p.Repo, &p.CoverURL, &p.StartedAt, &p.EndedAt, &p.DisplayOrder, &published); err != nil {
 		return p, err
 	}
 	_ = json.Unmarshal(tags, &p.Tags)
@@ -575,7 +551,7 @@ func scanProject(row scanner) (model.Project, error) {
 		p.Tags = []string{}
 	}
 	if p.Highlights == nil {
-		p.Highlights = []model.LocalizedString{}
+		p.Highlights = []string{}
 	}
 	p.IsPublished = published == 1
 	return p, nil
@@ -585,14 +561,13 @@ func scanExperience(row scanner) (model.Experience, error) {
 	var e model.Experience
 	var metrics []byte
 	var published int
-	if err := row.Scan(&e.ID, &e.Slug, &e.Org.ZH, &e.Org.EN, &e.Role.ZH, &e.Role.EN,
-		&e.Summary.ZH, &e.Summary.EN, &metrics, &e.Link, &e.StartedAt, &e.EndedAt,
-		&e.DisplayOrder, &published); err != nil {
+	if err := row.Scan(&e.ID, &e.Slug, &e.Org, &e.Role, &e.Summary, &metrics, &e.Link,
+		&e.StartedAt, &e.EndedAt, &e.DisplayOrder, &published); err != nil {
 		return e, err
 	}
 	_ = json.Unmarshal(metrics, &e.Metrics)
 	if e.Metrics == nil {
-		e.Metrics = []model.LocalizedString{}
+		e.Metrics = []string{}
 	}
 	e.IsPublished = published == 1
 	return e, nil
@@ -601,8 +576,7 @@ func scanExperience(row scanner) (model.Experience, error) {
 func scanHonor(row scanner) (model.Honor, error) {
 	var h model.Honor
 	var published int
-	if err := row.Scan(&h.ID, &h.Pillar, &h.Title.ZH, &h.Title.EN, &h.Story.ZH, &h.Story.EN,
-		&h.DisplayOrder, &published); err != nil {
+	if err := row.Scan(&h.ID, &h.Pillar, &h.Title, &h.Story, &h.DisplayOrder, &published); err != nil {
 		return h, err
 	}
 	h.IsPublished = published == 1
@@ -614,7 +588,7 @@ func parseDate(s string) string {
 	if s == "" {
 		return "1970-01-01"
 	}
-	if len(s) == 7 { // YYYY-MM
+	if len(s) == 7 {
 		return s + "-01"
 	}
 	return s

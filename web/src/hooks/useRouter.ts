@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { Locale } from '@/types';
 
 export type RouteKind =
   | 'home'
@@ -19,12 +18,12 @@ export type AdminSection =
   | 'timeline'
   | 'resume'
   | 'media'
+  | 'visuals'
   | 'settings'
   | 'audit';
 
 export interface AppRoute {
   path: string;
-  locale: Locale;
   kind: RouteKind;
   slug?: string;
   hash: string;
@@ -42,6 +41,7 @@ const ADMIN_SECTIONS: AdminSection[] = [
   'timeline',
   'resume',
   'media',
+  'visuals',
   'settings',
   'audit',
 ];
@@ -56,24 +56,32 @@ function setMeta(name: string, content: string) {
   element.content = content;
 }
 
+function canonicalizeLegacyPath(pathname: string): string | null {
+  if (pathname === '/zh' || pathname === '/en') return '/';
+  const legacyProject = pathname.match(/^\/(zh|en)\/projects\/([^/]+)$/);
+  if (legacyProject) return `/projects/${decodeURIComponent(legacyProject[2])}`;
+  const legacyExperience = pathname.match(/^\/(zh|en)\/experience\/([^/]+)$/);
+  if (legacyExperience) return `/experience/${decodeURIComponent(legacyExperience[2])}`;
+  return null;
+}
+
 function parsePath(pathname: string, hash: string): AppRoute {
   const clean = pathname.replace(/\/+$/, '') || '/';
 
   if (clean === '/admin/login') {
-    return { path: clean, locale: 'zh', kind: 'admin-login', hash: '' };
+    return { path: clean, kind: 'admin-login', hash: '' };
   }
   if (clean === '/admin') {
-    return { path: clean, locale: 'zh', kind: 'admin', adminSection: 'dashboard', hash: '' };
+    return { path: clean, kind: 'admin', adminSection: 'dashboard', hash: '' };
   }
   const adminMatch = clean.match(/^\/admin\/([^/]+)(?:\/([^/]+))?$/);
   if (adminMatch) {
     const section = adminMatch[1] as AdminSection;
     if (!ADMIN_SECTIONS.includes(section) || section === 'dashboard') {
-      return { path: clean, locale: 'zh', kind: 'admin-404', hash: '' };
+      return { path: clean, kind: 'admin-404', hash: '' };
     }
     return {
       path: clean,
-      locale: 'zh',
       kind: 'admin',
       adminSection: section,
       adminId: adminMatch[2] ? decodeURIComponent(adminMatch[2]) : undefined,
@@ -81,67 +89,47 @@ function parsePath(pathname: string, hash: string): AppRoute {
     };
   }
   if (clean.startsWith('/admin')) {
-    return { path: clean, locale: 'zh', kind: 'admin-404', hash: '' };
+    return { path: clean, kind: 'admin-404', hash: '' };
   }
 
-  if (clean === '/') {
-    return { path: '/zh', locale: 'zh', kind: 'home', hash };
-  }
-
-  const projectMatch = clean.match(/^\/(zh|en)\/projects\/([^/]+)$/);
+  const projectMatch = clean.match(/^\/projects\/([^/]+)$/);
   if (projectMatch) {
     return {
       path: clean,
-      locale: projectMatch[1] as Locale,
       kind: 'project',
-      slug: decodeURIComponent(projectMatch[2]),
+      slug: decodeURIComponent(projectMatch[1]),
       hash,
     };
   }
 
-  const experienceMatch = clean.match(/^\/(zh|en)\/experience\/([^/]+)$/);
+  const experienceMatch = clean.match(/^\/experience\/([^/]+)$/);
   if (experienceMatch) {
     return {
       path: clean,
-      locale: experienceMatch[1] as Locale,
       kind: 'experience',
-      slug: decodeURIComponent(experienceMatch[2]),
+      slug: decodeURIComponent(experienceMatch[1]),
       hash,
     };
   }
 
-  const homeMatch = clean.match(/^\/(zh|en)$/);
-  if (homeMatch) {
-    return {
-      path: clean,
-      locale: homeMatch[1] as Locale,
-      kind: 'home',
-      hash,
-    };
+  if (clean === '/') {
+    return { path: '/', kind: 'home', hash };
   }
 
-  return { path: '/zh', locale: 'zh', kind: 'home', hash: '' };
+  return { path: '/', kind: 'home', hash: '' };
 }
 
 function applyDocumentMeta(route: AppRoute) {
   if (route.kind.startsWith('admin')) {
-    document.documentElement.lang = 'zh';
-    document.title = 'gutsyang Admin';
-    setMeta('description', 'gutsyang content admin console');
+    document.documentElement.lang = 'zh-CN';
+    document.title = '廖晨扬 Admin';
+    setMeta('description', '廖晨扬内容管理后台');
     return;
   }
   const detail = route.slug ? ` · ${route.slug.replaceAll('-', ' ')}` : '';
-  document.documentElement.lang = route.locale;
-  document.title =
-    route.locale === 'zh'
-      ? `gutsyang${detail} · AI 算法工程师`
-      : `gutsyang${detail} · AI Engineer`;
-  setMeta(
-    'description',
-    route.locale === 'zh'
-      ? 'gutsyang 的项目、经历与 AI 研究。'
-      : 'Projects, experience and AI research by gutsyang.',
-  );
+  document.documentElement.lang = 'zh-CN';
+  document.title = `廖晨扬${detail} · AI 算法工程师`;
+  setMeta('description', '廖晨扬的项目、经历与 AI 研究。');
 }
 
 function readLocation(): AppRoute {
@@ -151,17 +139,20 @@ function readLocation(): AppRoute {
 export function useRouter() {
   const [route, setRoute] = useState<AppRoute>(() => {
     if (typeof window === 'undefined') {
-      return { path: '/zh', locale: 'zh', kind: 'home', hash: '' };
+      return { path: '/', kind: 'home', hash: '' };
     }
     return readLocation();
   });
 
   useEffect(() => {
+    const legacy = canonicalizeLegacyPath(window.location.pathname);
+    if (legacy) {
+      const target = legacy + window.location.hash;
+      window.history.replaceState({}, '', target);
+    }
+
     const current = readLocation();
-    const shouldReplace =
-      window.location.pathname === '/' ||
-      (current.path !== window.location.pathname && !current.kind.startsWith('admin'));
-    if (shouldReplace || (window.location.pathname === '/' && current.path === '/zh')) {
+    if (current.path !== window.location.pathname && !current.kind.startsWith('admin')) {
       window.history.replaceState({}, '', current.path + current.hash);
     }
     setRoute(current);
@@ -188,7 +179,9 @@ export function useRouter() {
 
   const navigate = useCallback((to: string, options?: { replace?: boolean }) => {
     const url = new URL(to, window.location.origin);
-    const next = parsePath(url.pathname, url.hash);
+    const legacy = canonicalizeLegacyPath(url.pathname);
+    const pathname = legacy || url.pathname;
+    const next = parsePath(pathname, url.hash);
     const target = next.path + next.hash;
     if (options?.replace) {
       window.history.replaceState({}, '', target);
@@ -202,17 +195,5 @@ export function useRouter() {
     }
   }, []);
 
-  const switchLocale = useCallback(
-    (nextLocale: Locale) => {
-      if (route.kind.startsWith('admin')) return;
-      const nextPath = route.path.replace(/^\/(zh|en)/, `/${nextLocale}`);
-      navigate(nextPath + route.hash);
-    },
-    [navigate, route.hash, route.kind, route.path],
-  );
-
-  return useMemo(
-    () => ({ route, navigate, switchLocale }),
-    [route, navigate, switchLocale],
-  );
+  return useMemo(() => ({ route, navigate }), [route, navigate]);
 }

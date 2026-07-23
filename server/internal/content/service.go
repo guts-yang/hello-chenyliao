@@ -101,7 +101,7 @@ func NewService(db *sql.DB) (*Service, error) {
 func mergeSeed(ctx context.Context, repo Repo, snap model.ContentSnapshot) error {
 	profile, err := repo.Profile(ctx)
 	if err == nil {
-		profile.NameEN = snap.Profile.NameEN
+		profile.Name = snap.Profile.Name
 		if len(profile.Socials) == 0 {
 			profile.Socials = snap.Profile.Socials
 		} else {
@@ -175,13 +175,13 @@ func normalizeSnapshot(snap *model.ContentSnapshot) {
 			snap.Projects[i].Tags = []string{}
 		}
 		if snap.Projects[i].Highlights == nil {
-			snap.Projects[i].Highlights = []model.LocalizedString{}
+			snap.Projects[i].Highlights = []string{}
 		}
 	}
 	for i := range snap.Experiences {
 		snap.Experiences[i].ID = stableEntityUUID("experience", snap.Experiences[i].ID).String()
 		if snap.Experiences[i].Metrics == nil {
-			snap.Experiences[i].Metrics = []model.LocalizedString{}
+			snap.Experiences[i].Metrics = []string{}
 		}
 	}
 	for i := range snap.Honors {
@@ -208,7 +208,16 @@ func stableEntityUUID(kind, id string) uuid.UUID {
 }
 
 func (s *Service) Home(ctx context.Context) (model.HomeContent, error) {
-	return s.repo.Home(ctx)
+	home, err := s.repo.Home(ctx)
+	if err != nil {
+		return home, err
+	}
+	visuals, err := s.Visuals(ctx)
+	if err != nil {
+		return home, err
+	}
+	home.Visuals = visuals
+	return home, nil
 }
 func (s *Service) Snapshot(ctx context.Context) (model.ContentSnapshot, error) {
 	return s.repo.Snapshot(ctx)
@@ -305,7 +314,51 @@ func (s *Service) DeleteTimeline(ctx context.Context, id string) error {
 	return s.repo.DeleteTimeline(ctx, id)
 }
 
-const SettingResumeURL = "resume_url"
+const (
+	SettingResumeURL   = "resume_url"
+	SettingHomeVisuals = "home_visuals"
+)
+
+// DefaultVisuals returns the visual assets bundled with the embedded seed.
+func DefaultVisuals() model.VisualSettings {
+	return model.VisualSettings{
+		HeroVideoURL:          "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260405_170732_8a9ccda6-5cff-4628-b164-059c500a2b41.mp4",
+		FeatureVideoURL:       "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260406_133058_0504132a-0cf3-4450-a370-8ea3b05c95d4.mp4",
+		FeatureIconProjects:   "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260405_171918_4a5edc79-d78f-4637-ac8b-53c43c220606.png&w=1280&q=85",
+		FeatureIconExperience: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260405_171741_ed9845ab-f5b2-4018-8ce7-07cc01823522.png&w=1280&q=85",
+		FeatureIconEducation:  "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260405_171809_f56666dc-c099-4778-ad82-9ad4f209567b.png&w=1280&q=85",
+	}
+}
+
+func (s *Service) Visuals(ctx context.Context) (model.VisualSettings, error) {
+	raw, err := s.repo.GetSetting(ctx, SettingHomeVisuals)
+	if errors.Is(err, ErrNotFound) || strings.TrimSpace(raw) == "" {
+		return DefaultVisuals(), nil
+	}
+	if err != nil {
+		return model.VisualSettings{}, err
+	}
+	var visuals model.VisualSettings
+	if err := json.Unmarshal([]byte(raw), &visuals); err != nil {
+		return DefaultVisuals(), nil
+	}
+	if visuals == (model.VisualSettings{}) {
+		return DefaultVisuals(), nil
+	}
+	return visuals, nil
+}
+
+func (s *Service) SetVisuals(ctx context.Context, visuals model.VisualSettings) (model.VisualSettings, error) {
+	visuals.UpdatedAt = time.Now().UTC()
+	raw, err := json.Marshal(visuals)
+	if err != nil {
+		return model.VisualSettings{}, err
+	}
+	if err := s.repo.SetSetting(ctx, SettingHomeVisuals, string(raw)); err != nil {
+		return model.VisualSettings{}, err
+	}
+	return visuals, nil
+}
 
 func (s *Service) Resume(ctx context.Context) (model.ResumeSettings, error) {
 	url, err := s.repo.GetSetting(ctx, SettingResumeURL)
@@ -377,8 +430,7 @@ func (s *Service) SearchProjects(ctx context.Context, query string, limit int) (
 	var hits []model.Project
 	for _, p := range all {
 		blob := strings.ToLower(strings.Join([]string{
-			p.Slug, p.Title.ZH, p.Title.EN, p.Tagline.ZH, p.Tagline.EN,
-			p.Summary.ZH, p.Summary.EN, strings.Join(p.Tags, " "),
+			p.Slug, p.Title, p.Tagline, p.Summary, strings.Join(p.Tags, " "),
 		}, " "))
 		if strings.Contains(blob, q) {
 			hits = append(hits, p)
@@ -414,7 +466,7 @@ func newMemoryRepo() *memoryRepo {
 func (r *memoryRepo) IsEmpty(_ context.Context) (bool, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	return r.snap.Profile.NameZH == "", nil
+	return r.snap.Profile.Name == "", nil
 }
 
 func (r *memoryRepo) ImportSnapshot(_ context.Context, snap model.ContentSnapshot) error {
@@ -442,6 +494,7 @@ func (r *memoryRepo) Home(ctx context.Context) (model.HomeContent, error) {
 		Honors:      publishedHonors(snap.Honors),
 		Education:   cloneEducation(snap.Education),
 		Timeline:    cloneTimeline(snap.Timeline),
+		Visuals:     snap.Visuals,
 	}, nil
 }
 
@@ -737,6 +790,7 @@ func cloneSnap(s model.ContentSnapshot) model.ContentSnapshot {
 		Honors:      cloneHonors(s.Honors),
 		Education:   cloneEducation(s.Education),
 		Timeline:    cloneTimeline(s.Timeline),
+		Visuals:     s.Visuals,
 	}
 }
 

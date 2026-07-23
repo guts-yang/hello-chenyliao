@@ -283,6 +283,32 @@ func (s *Server) handleAdminPutProfile(w http.ResponseWriter, r *http.Request) {
 	httpx.WriteJSON(w, http.StatusOK, p)
 }
 
+func (s *Server) handleAdminGetVisuals(w http.ResponseWriter, r *http.Request) {
+	visuals, err := s.content.Visuals(r.Context())
+	if err != nil {
+		httpx.WriteServerError(w, r, err)
+		return
+	}
+	httpx.WriteJSON(w, http.StatusOK, visuals)
+}
+
+func (s *Server) handleAdminPutVisuals(w http.ResponseWriter, r *http.Request) {
+	ac := adminFrom(r.Context())
+	var body model.VisualSettings
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		httpx.WriteClientError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	visuals, err := s.content.SetVisuals(r.Context(), body)
+	if err != nil {
+		httpx.WriteServerError(w, r, err)
+		return
+	}
+	s.invalidatePublicCache()
+	s.audit.Record(r.Context(), audit.Entry{Action: "visuals.update", UserID: &ac.User.ID})
+	httpx.WriteJSON(w, http.StatusOK, visuals)
+}
+
 func (s *Server) handleAdminListProjects(w http.ResponseWriter, r *http.Request) {
 	items, err := s.content.Projects(r.Context(), true)
 	if err != nil {
@@ -634,27 +660,6 @@ func (s *Server) handleAdminPutResume(w http.ResponseWriter, r *http.Request) {
 	s.invalidatePublicCache()
 	s.audit.Record(r.Context(), audit.Entry{Action: "resume.update", UserID: &ac.User.ID, Target: body.URL})
 	httpx.WriteJSON(w, http.StatusOK, resume)
-}
-
-func (s *Server) handleTranslate(w http.ResponseWriter, r *http.Request) {
-	if !s.loginLimiterAllow(w, s.adminAILimit, "admin-ai:"+httpx.ClientIP(r), s.cfg.RateLimitAdminAI.Window) {
-		return
-	}
-	ac := adminFrom(r.Context())
-	var body struct {
-		Items map[string]string `json:"items"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		httpx.WriteClientError(w, http.StatusBadRequest, "invalid request body")
-		return
-	}
-	out, err := s.ai.Translate(r.Context(), body.Items)
-	if err != nil {
-		httpx.WriteServerError(w, r, err)
-		return
-	}
-	s.audit.Record(r.Context(), audit.Entry{Action: "ai.translate", UserID: &ac.User.ID})
-	httpx.WriteJSON(w, http.StatusOK, map[string]any{"ok": true, "items": out})
 }
 
 func writeContentErr(w http.ResponseWriter, err error) {

@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/guts-yang/hello-gutsyang/server/internal/content"
-	"github.com/guts-yang/hello-gutsyang/server/internal/model"
 )
 
 type ToolPayload map[string]any
@@ -60,23 +59,15 @@ func ToolDefs() []map[string]any {
 				"name":        "show_resume",
 				"description": "Offer a PDF resume download link.",
 				"parameters": map[string]any{
-					"type": "object",
-					"properties": map[string]any{
-						"lang": map[string]any{"type": "string", "enum": []string{"zh", "en"}},
-					},
+					"type":       "object",
+					"properties": map[string]any{},
 				},
 			},
 		},
 	}
 }
 
-func ExecuteTool(ctx context.Context, cms *content.Service, name string, args map[string]any, locale model.Locale) ToolPayload {
-	pick := func(ls model.LocalizedString) string {
-		if locale == model.LocaleEN {
-			return ls.EN
-		}
-		return ls.ZH
-	}
+func ExecuteTool(ctx context.Context, cms *content.Service, name string, args map[string]any) ToolPayload {
 	switch name {
 	case "search_projects":
 		q, _ := args["query"].(string)
@@ -88,9 +79,9 @@ func ExecuteTool(ctx context.Context, cms *content.Service, name string, args ma
 		for _, p := range hits {
 			items = append(items, map[string]string{
 				"slug":    p.Slug,
-				"title":   pick(p.Title),
-				"tagline": pick(p.Tagline),
-				"href":    fmt.Sprintf("/%s/projects/%s", locale, p.Slug),
+				"title":   p.Title,
+				"tagline": p.Tagline,
+				"href":    fmt.Sprintf("/projects/%s", p.Slug),
 			})
 		}
 		return ToolPayload{"kind": "projects", "items": items}
@@ -102,8 +93,8 @@ func ExecuteTool(ctx context.Context, cms *content.Service, name string, args ma
 		}
 		return ToolPayload{
 			"kind": "project", "slug": p.Slug,
-			"title": pick(p.Title), "tagline": pick(p.Tagline), "summary": pick(p.Summary),
-			"href": fmt.Sprintf("/%s/projects/%s", locale, p.Slug),
+			"title": p.Title, "tagline": p.Tagline, "summary": p.Summary,
+			"href": fmt.Sprintf("/projects/%s", p.Slug),
 		}
 	case "show_experience":
 		slug, _ := args["slug"].(string)
@@ -113,20 +104,12 @@ func ExecuteTool(ctx context.Context, cms *content.Service, name string, args ma
 		}
 		return ToolPayload{
 			"kind": "experience", "slug": e.Slug,
-			"org": pick(e.Org), "role": pick(e.Role), "summary": pick(e.Summary),
-			"href": fmt.Sprintf("/%s/experience/%s", locale, e.Slug),
+			"org": e.Org, "role": e.Role, "summary": e.Summary,
+			"href": fmt.Sprintf("/experiences/%s", e.Slug),
 		}
 	case "show_resume":
-		lang := string(locale)
-		if v, ok := args["lang"].(string); ok && (v == "zh" || v == "en") {
-			lang = v
-		}
-		label := "Download resume PDF"
-		if lang == "zh" {
-			label = "下载简历 PDF"
-		}
 		return ToolPayload{
-			"kind": "resume", "href": "/api/resume.pdf?lang=" + lang, "label": label,
+			"kind": "resume", "href": "/api/resume.pdf", "label": "下载简历 PDF",
 		}
 	default:
 		return ToolPayload{"kind": "error", "message": "unknown tool: " + name}

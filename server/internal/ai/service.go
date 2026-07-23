@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/guts-yang/hello-gutsyang/server/internal/content"
-	"github.com/guts-yang/hello-gutsyang/server/internal/model"
 )
 
 const MaxToolRounds = 3
@@ -62,7 +61,7 @@ func NewService(contentSvc *content.Service, apiKey, baseURL, modelName string) 
 
 func (s *Service) DemoMode() bool { return strings.TrimSpace(s.apiKey) == "" }
 
-func (s *Service) BuildSystemPrompt(ctx context.Context, locale model.Locale) (string, error) {
+func (s *Service) BuildSystemPrompt(ctx context.Context) (string, error) {
 	profile, err := s.content.Profile(ctx)
 	if err != nil {
 		return "", err
@@ -75,61 +74,39 @@ func (s *Service) BuildSystemPrompt(ctx context.Context, locale model.Locale) (s
 	if err != nil {
 		return "", err
 	}
-	pick := func(ls model.LocalizedString) string {
-		if locale == model.LocaleEN {
-			return ls.EN
-		}
-		return ls.ZH
+	lines := []string{
+		fmt.Sprintf("你是 %s 个人网站上的 AI 助手。", profile.Name),
+		"请始终使用简体中文，基于站点内容回答，保持简洁、真实，不要编造经历。",
 	}
-	name := profile.NameZH
-	if locale == model.LocaleEN {
-		name = profile.NameEN
-	}
-	lines := []string{}
-	if locale == model.LocaleEN {
-		lines = append(lines,
-			fmt.Sprintf("You are the AI assistant on %s's personal website.", profile.NameEN),
-			"Answer from the site content. Be concise, factual, and do not invent experience.",
-		)
-	} else {
-		lines = append(lines,
-			fmt.Sprintf("你是 %s（%s）个人网站上的 AI 助手。", profile.NameZH, profile.NameEN),
-			"请基于站点内容回答，保持简洁、真实，不要编造经历。",
-		)
-	}
-	_ = name
 	projTitles := make([]string, 0, len(projects))
 	for _, p := range projects {
-		projTitles = append(projTitles, pick(p.Title))
+		projTitles = append(projTitles, p.Title)
 	}
 	expOrgs := make([]string, 0, len(experiences))
 	for _, e := range experiences {
-		expOrgs = append(expOrgs, pick(e.Org))
+		expOrgs = append(expOrgs, e.Org)
 	}
 	lines = append(lines,
-		"Role: "+pick(profile.Role),
-		"Slogan: "+pick(profile.Slogan),
-		"Bio: "+pick(profile.Bio),
-		"Projects: "+strings.Join(projTitles, ", "),
-		"Experiences: "+strings.Join(expOrgs, ", "),
+		"角色："+profile.Role,
+		"简介："+profile.Slogan,
+		"个人描述："+profile.Bio,
+		"项目："+strings.Join(projTitles, "、"),
+		"经历："+strings.Join(expOrgs, "、"),
 	)
 	return strings.Join(lines, "\n"), nil
 }
 
-func (s *Service) DemoText(locale model.Locale) string {
-	if locale == model.LocaleEN {
-		return "(Demo mode) Set DEEPSEEK_API_KEY to enable live answers.\n\nExample: His focus is LLM machine unlearning and multi-agent orchestration."
-	}
+func (s *Service) DemoText() string {
 	return "（演示模式）请配置 DEEPSEEK_API_KEY 后再试。\n\n示例回答：他的核心方向是大模型机器遗忘学习与多智能体架构。"
 }
 
 // StreamChat yields NDJSON events: d / tool / err.
-func (s *Service) StreamChat(ctx context.Context, locale model.Locale, messages []Message) (<-chan Event, error) {
+func (s *Service) StreamChat(ctx context.Context, messages []Message) (<-chan Event, error) {
 	out := make(chan Event, 16)
 	go func() {
 		defer close(out)
 		if s.DemoMode() {
-			text := s.DemoText(locale)
+			text := s.DemoText()
 			for _, chunk := range chunkText(text, 8) {
 				select {
 				case <-ctx.Done():
@@ -139,7 +116,7 @@ func (s *Service) StreamChat(ctx context.Context, locale model.Locale, messages 
 			}
 			return
 		}
-		system, err := s.BuildSystemPrompt(ctx, locale)
+		system, err := s.BuildSystemPrompt(ctx)
 		if err != nil {
 			out <- Event{T: "err", Message: err.Error()}
 			return
@@ -170,7 +147,7 @@ func (s *Service) StreamChat(ctx context.Context, locale model.Locale, messages 
 				if args == nil {
 					args = map[string]any{}
 				}
-				payload := ExecuteTool(ctx, s.content, tc.Function.Name, args, locale)
+				payload := ExecuteTool(ctx, s.content, tc.Function.Name, args)
 				out <- Event{T: "tool", Name: tc.Function.Name, Data: payload}
 				history = append(history, Message{
 					Role:       "tool",
@@ -278,84 +255,6 @@ func (s *Service) streamOnce(ctx context.Context, messages []Message, enableTool
 	return collected, calls, nil
 }
 
-func (s *Service) Translate(ctx context.Context, items map[string]string) (map[string]string, error) {
-	keys := make([]string, 0, len(items))
-	for k := range items {
-		keys = append(keys, k)
-	}
-	if len(keys) == 0 {
-		return map[string]string{}, nil
-	}
-	if s.DemoMode() {
-		out := map[string]string{}
-		for k, v := range items {
-			if v == "" {
-				out[k] = v
-			} else {
-				out[k] = "[EN] " + v
-			}
-		}
-		return out, nil
-	}
-	system := `You are a bilingual CV editor. Translate Chinese values to concise professional English.
-Keep acronyms, pinyin names, URLs and dates unchanged. Reply with a JSON object whose keys match the input keys exactly.`
-	body := map[string]any{
-		"model":           s.model,
-		"stream":          false,
-		"temperature":     0.2,
-		"response_format": map[string]string{"type": "json_object"},
-		"messages": []Message{
-			{Role: "system", Content: system},
-			{Role: "user", Content: mustJSON(items)},
-		},
-	}
-	raw, _ := json.Marshal(body)
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.baseURL+"/chat/completions", bytes.NewReader(raw))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Authorization", "Bearer "+s.apiKey)
-	req.Header.Set("Content-Type", "application/json")
-	resp, err := s.client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode >= 300 {
-		return nil, fmt.Errorf("upstream translate failed: %d", resp.StatusCode)
-	}
-	var parsed struct {
-		Choices []struct {
-			Message struct {
-				Content string `json:"content"`
-			} `json:"message"`
-		} `json:"choices"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&parsed); err != nil {
-		return nil, err
-	}
-	content := "{}"
-	if len(parsed.Choices) > 0 {
-		content = parsed.Choices[0].Message.Content
-	}
-	content = strings.TrimSpace(content)
-	content = strings.TrimPrefix(content, "```json")
-	content = strings.TrimPrefix(content, "```")
-	content = strings.TrimSuffix(content, "```")
-	content = strings.TrimSpace(content)
-	var result map[string]string
-	_ = json.Unmarshal([]byte(content), &result)
-	out := map[string]string{}
-	for _, k := range keys {
-		if v, ok := result[k]; ok && v != "" {
-			out[k] = v
-		} else {
-			out[k] = items[k]
-		}
-	}
-	return out, nil
-}
-
 func chunkText(text string, size int) []string {
 	r := []rune(text)
 	var out []string
@@ -368,9 +267,4 @@ func chunkText(text string, size int) []string {
 		r = r[n:]
 	}
 	return out
-}
-
-func mustJSON(v any) string {
-	b, _ := json.Marshal(v)
-	return string(b)
 }

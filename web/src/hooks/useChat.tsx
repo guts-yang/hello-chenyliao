@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from 'react';
 import { apiFetch, apiUrl } from '@/lib/api';
-import type { ChatMessage, ChatSession, Locale } from '@/types';
+import type { ChatMessage, ChatSession } from '@/types';
 
 type StreamEvent =
   | { t: 'd'; v: string }
@@ -26,7 +26,7 @@ interface ChatContextValue {
   openSession: (id: string) => Promise<void>;
   newSession: () => void;
   removeSession: (id: string) => Promise<void>;
-  send: (content: string, locale: Locale) => Promise<void>;
+  send: (content: string) => Promise<void>;
 }
 
 const ChatContext = createContext<ChatContextValue | null>(null);
@@ -68,7 +68,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   );
 
   const send = useCallback(
-    async (content: string, locale: Locale) => {
+    async (content: string) => {
       const text = content.trim();
       if (!text || busy) return;
       setError('');
@@ -82,7 +82,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           credentials: 'include',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
-            locale,
+            locale: 'zh',
             sessionId,
             messages: [...messages, userMessage].map(({ role, content: value }) => ({
               role,
@@ -142,10 +142,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           if (last?.role === 'assistant' && !last.content) {
             next[next.length - 1] = {
               ...last,
-              content:
-                locale === 'zh'
-                  ? '暂时无法连接 AI 服务。'
-                  : 'The AI service is currently unavailable.',
+              content: '暂时无法连接 AI 服务。',
             };
           }
           return next;
