@@ -1,0 +1,12 @@
+.git
+.github
+.cursor
+.env
+.env.*
+node_modules
+web/node_modules
+web/dist
+server/bin
+server/uploads
+coverage
+*.log

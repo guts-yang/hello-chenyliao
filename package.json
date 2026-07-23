@@ -1,42 +1,31 @@
 {
-  "name": "hello-chenyliao",
+  "name": "hello-gutsyang",
   "version": "0.1.0",
   "private": true,
-  "description": "gutsyang 的 Next.js 双语个人主页/作品集，展示个人简介、项目经历与 AI 助手。",
+  "description": "gutsyang 的双语个人主页/作品集：Vue 3 前端 + Go 模块化单体 API。",
+  "workspaces": [
+    "web",
+    "utils"
+  ],
   "scripts": {
-    "dev": "next dev",
-    "dev:frontend": "next dev",
-    "dev:backend": "cd backend && go run ./cmd/api",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
-    "typecheck": "tsc --noEmit",
-    "test:backend": "cd backend && go test ./..."
-  },
-  "dependencies": {
-    "@radix-ui/react-dialog": "^1.1.2",
-    "@radix-ui/react-slot": "^1.1.0",
-    "class-variance-authority": "^0.7.0",
-    "clsx": "^2.1.1",
-    "framer-motion": "^11.11.17",
-    "lucide-react": "^0.460.0",
-    "next": "^15.5.18",
-    "next-intl": "^4.12.0",
-    "next-themes": "^0.4.3",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "tailwind-merge": "^2.5.4",
-    "tailwindcss-animate": "^1.0.7"
+    "dev": "npm run dev -w web",
+    "dev:web": "npm run dev -w web",
+    "dev:server": "npm run server",
+    "build": "npm run build -w web",
+    "build:web": "npm run build -w web",
+    "start": "npm run start -w web",
+    "lint": "npm run lint -w web",
+    "typecheck": "npm run typecheck -w web",
+    "test": "npm run test:server",
+    "test:server": "go -C server test ./...",
+    "server": "go -C server run ./cmd/server",
+    "db:up": "docker compose -f config/docker-compose.yml up -d",
+    "db:down": "docker compose -f config/docker-compose.yml down",
+    "db:migrate": "go -C server run ./cmd/server migrate up",
+    "db:migrate:status": "go -C server run ./cmd/server migrate status",
+    "auth:hash": "go -C server run ./cmd/server hash"
   },
   "devDependencies": {
-    "@types/node": "^20.17.6",
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
-    "autoprefixer": "^10.4.20",
-    "eslint": "^9.39.4",
-    "eslint-config-next": "^15.5.18",
-    "postcss": "^8.5.10",
-    "tailwindcss": "^3.4.15",
     "typescript": "^5.6.3"
   }
 }

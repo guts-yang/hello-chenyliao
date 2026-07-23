@@ -1,0 +1,65 @@
+# Local infrastructure for the Go API.
+#
+# Run with:  docker compose -f config/docker-compose.yml up -d
+# Stop with: docker compose -f config/docker-compose.yml down
+# Wipe data: docker compose -f config/docker-compose.yml down -v
+#
+# Fresh clone:
+#   cp config/env.example .env
+#   docker compose -f config/docker-compose.yml up -d
+#   cd server && go run ./cmd/server migrate up && go run ./cmd/server
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: hello-gutsyang-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: hello
+      MYSQL_PASSWORD: hello
+      MYSQL_DATABASE: hello_gutsyang
+    ports:
+      - "3306:3306"
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=+00:00
+    volumes:
+      - hello-gutsyang-mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    container_name: hello-gutsyang-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - hello-gutsyang-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Optional: run the Go API inside compose (not required for local `go run`).
+  # Build from repo root: docker build -f server/Dockerfile -t hello-gutsyang-api .
+  # api:
+  #   image: hello-gutsyang-api
+  #   depends_on:
+  #     mysql:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #   ports:
+  #     - "8080:8080"
+  #   env_file:
+  #     - ../.env
+  #   volumes:
+  #     - ../uploads:/app/uploads
+
+volumes:
+  hello-gutsyang-mysql-data:
+  hello-gutsyang-redis-data:
